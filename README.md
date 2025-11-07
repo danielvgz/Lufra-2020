@@ -1,6 +1,5 @@
 # Lufra-2020 — Sistema de Nóminas (Laravel + Vue.js)
 
-<!--TITLE_DATE-->Actualizado: 2025-11-07 19:29:03 UTC<!--TITLE_DATE_END-->
 
 Descripción
 ------------

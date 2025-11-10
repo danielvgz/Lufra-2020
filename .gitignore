@@ -1,0 +1,38 @@
+# Root .gitignore for the repository
+# This centralizes ignores for Laravel projects and local databases.
+
+# PHP / Laravel
+/Lab-workspace/Backend/vendor/
+/Lab-workspace/Backend/node_modules/
+/Lab-workspace/Backend/public/hot
+/Lab-workspace/Backend/public/storage
+/Lab-workspace/Backendstorage/*.key
+/Lab-workspace/Backend/storage/framework/cache/*
+/Lab-workspace/Backend/storage/framework/sessions/*
+/Lab-workspace/Backend/storage/framework/testing/*
+/Lab-workspace/Backend/storage/logs/*
+/Lab-workspace/Backend/.env
+/Lab-workspace/Backend.env.*
+/Lab-workspace/Backend/.phpunit.result.cache
+/Lab-workspace/Backend/.phpunit.result.cache
+
+# Editors / OS
+/.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Build / logs
+npm-debug.log
+yarn-error.log
+
+# SQLite databases (local test DBs)
+*.sqlite
+*.sqlite3
+
+# Lab-workspace specific test DBs
+/Lab-workspace/test_db.sqlite
+/Lab-workspace/*.sqlite
+
+# Keep single .gitignore at repo root
+# If there are subfolder .gitignore files you want removed, delete them and keep only this file.

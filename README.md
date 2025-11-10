@@ -1,6 +1,6 @@
 # Lufra-2020 — Sistema de Nóminas (Laravel + Vue.js)
 <!-- ESTADO-ACTUAL-INI -->
-**Fecha de hoy:** 08/11/2025
+**Fecha de hoy:** 10/11/2025
 <!-- ESTADO-ACTUAL-FIN -->
 
 Descripción
@@ -59,3 +59,13 @@ Tareas continuas
 - Gestión de issues y sprints (milestones).
 - Reuniones de seguimiento (weekly stand-up).
 - Monitoreo y ajustes del tipo de cambio si se aplica conversión automática.
+
+<!-- ESTADO-SEMANA-PASADA-INI -->
+### Clase pasada
+
+_Sin clases en este estado._
+<!-- ESTADO-SEMANA-PASADA-FIN -->
+
+<!-- ESTADO-SEMANA-PROXIMA-INI -->
+
+<!-- ESTADO-SEMANA-PROXIMA-FIN -->

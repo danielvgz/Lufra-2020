@@ -1,0 +1,20 @@
+:root{
+  --brand: #0d6efd;
+}
+body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+.gallery-grid a{display:block}
+.gallery-grid img{transition: transform .25s ease, box-shadow .25s ease}
+.gallery-grid img:hover{transform: translateY(-6px); box-shadow: 0 10px 30px rgba(0,0,0,0.12)}
+footer small{opacity:.9}
+
+/* Contact form spacing */
+#contact form .form-control:invalid{border-color:#dc3545}
+
+@media (max-width:576px){
+  .carousel-caption{display:none}
+}
+
+/* Products page */
+.card .card-img-top{height:200px; object-fit:cover}
+.badge-positioned{position:relative}
+

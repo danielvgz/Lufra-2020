@@ -1,6 +1,21 @@
 # Root .gitignore for the repository
 # This centralizes ignores for Laravel projects and local databases.
 
+# PHP / Laravel Backend
+Backend/vendor/
+Backend/node_modules/
+Backend/public/hot
+Backend/public/storage
+Backendstorage/*.key
+Backend/storage/framework/cache/*
+Backend/storage/framework/sessions/*
+Backend/storage/framework/testing/*
+Backend/storage/logs/*
+Backend/.env
+Backend.env.*
+Backend/.phpunit.result.cache
+Backend/.phpunit.result.cache
+
 # PHP / Laravel
 /Lab-workspace/Backend/vendor/
 /Lab-workspace/Backend/node_modules/

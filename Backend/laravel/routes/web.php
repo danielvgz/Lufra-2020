@@ -26,7 +26,7 @@ Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name(
 
 // Configuración y empresa
 Route::middleware('auth')->group(function () {
-    Route::view('/usuarios-config', 'usuarios_config')->name('usuarios.config');
+
     Route::view('/roles', 'roles')->name('roles.index');
     Route::view('/permissions', 'permissions')->name('permissions.index');
 
@@ -199,7 +199,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Departamentos (vista y CRUD)
-    Route::get('/departamentos', function(){ return view('departamentos'); })->name('departamentos.view');
+    Route::get('/departamentos')->name('departamentos');
     Route::post('/departamentos/nuevo', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
             'name' => ['required','string','max:255'],

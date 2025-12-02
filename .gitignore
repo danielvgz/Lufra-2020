@@ -2,34 +2,34 @@
 # This centralizes ignores for Laravel projects and local databases.
 
 # PHP / Laravel Backend
-Backend/vendor/
-Backend/node_modules/
-Backend/public/hot
+Backend/laravel/vendor/
+Backend/laravel/node_modules/
+Backend/laravel/public/hot
 Backend/public/storage
-Backendstorage/*.key
-Backend/storage/framework/cache/*
-Backend/storage/framework/sessions/*
-Backend/storage/framework/testing/*
-Backend/storage/logs/*
-Backend/.env
-Backend.env.*
-Backend/.phpunit.result.cache
-Backend/.phpunit.result.cache
+Backend/laravel/storage/*.key
+Backend/laravel/storage/framework/cache/*
+Backend/laravel/storage/framework/sessions/*
+Backend/laravel/storage/framework/testing/*
+Backend/laravel/storage/logs/*
+Backend/laravel/.env
+Backend/laravel/.env.*
+Backend/laravel/.phpunit.result.cache
+Backend/laravel/.phpunit.result.cache
 
 # PHP / Laravel
-/Lab-workspace/Backend/vendor/
-/Lab-workspace/Backend/node_modules/
-/Lab-workspace/Backend/public/hot
-/Lab-workspace/Backend/public/storage
-/Lab-workspace/Backendstorage/*.key
-/Lab-workspace/Backend/storage/framework/cache/*
-/Lab-workspace/Backend/storage/framework/sessions/*
-/Lab-workspace/Backend/storage/framework/testing/*
-/Lab-workspace/Backend/storage/logs/*
-/Lab-workspace/Backend/.env
-/Lab-workspace/Backend.env.*
-/Lab-workspace/Backend/.phpunit.result.cache
-/Lab-workspace/Backend/.phpunit.result.cache
+/Lab-workspace/Backend/laravel/vendor/
+/Lab-workspace/Backend/laravel/node_modules/
+/Lab-workspace/Backend/laravel/public/hot
+/Lab-workspace/Backend/laravel/public/storage
+/Lab-workspace/Backend/laravel/storage/*.key
+/Lab-workspace/Backend/laravel/storage/framework/cache/*
+/Lab-workspace/Backend/laravel/storage/framework/sessions/*
+/Lab-workspace/Backend/laravel/storage/framework/testing/*
+/Lab-workspace/Backend/laravel/storage/logs/*
+/Lab-workspace/Backend/laravel/.env
+/Lab-workspace/Backend/laravel/.env.*
+/Lab-workspace/Backend/laravel/.phpunit.result.cache
+/Lab-workspace/Backend/laravel/.phpunit.result.cache
 
 # Editors / OS
 /.idea/
@@ -45,9 +45,7 @@ yarn-error.log
 *.sqlite
 *.sqlite3
 
-# Lab-workspace specific test DBs
-/Lab-workspace/test_db.sqlite
-/Lab-workspace/*.sqlite
+
 
 # Keep single .gitignore at repo root
 # If there are subfolder .gitignore files you want removed, delete them and keep only this file.

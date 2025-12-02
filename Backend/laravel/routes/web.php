@@ -41,13 +41,23 @@ Route::middleware('auth')->group(function () {
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255', \Illuminate\Validation\Rule::unique('users','email')->ignore($user->id)],
+            'current_password' => ['nullable','string'],
+            'password' => ['nullable','string','min:8','confirmed'],
         ]);
-        \Illuminate\Support\Facades\DB::table('users')->where('id',$user->id)->update([
+        $update = [
             'name' => $data['name'],
             'email' => $data['email'],
             'updated_at' => now(),
-        ]);
-        return redirect()->route('perfil');
+        ];
+        if (!empty($data['password'])) {
+            // Verify current password before changing
+            if (!\Illuminate\Support\Facades\Hash::check($data['current_password'] ?? '', $user->password)) {
+                return back()->withErrors(['current_password' => 'La contraseña actual no es válida'])->withInput();
+            }
+            $update['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+        }
+        \Illuminate\Support\Facades\DB::table('users')->where('id',$user->id)->update($update);
+        return redirect()->route('perfil')->with('status','Perfil actualizado');
     })->name('perfil.update');
     Route::post('/perfil/desactivar', function(){
         $uid = auth()->id();
@@ -63,7 +73,14 @@ Route::middleware('auth')->group(function () {
     // Nóminas (periodos)
     Route::get('/nominas', function(){ return view('nominas'); })->name('nominas.index');
     Route::get('/recibos-pagos', function(){ return view('recibos_pagos'); })->name('recibos_pagos');
-    Route::get('/contratos', function(\Illuminate\Http\Request $request){ return view('contratos'); })->name('contratos.index');
+    Route::get('/contratos', function(\Illuminate\Http\Request $request){ 
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('contratos'); 
+    })->name('contratos.index');
     Route::post('/contratos', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
             'empleado_id' => ['required','integer','exists:empleados,id'],
@@ -202,8 +219,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/periodos/{periodo}/banco', [\App\Http\Controllers\PayrollController::class, 'bankFile'])->name('nomina.banco');
     });
 
-    // Departamentos (vista y CRUD)
-    Route::get('/departamentos', function(){ return view('departamentos'); })->name('departamentos.view');
+    // Departamentos (vista y CRUD) - solo admin
+    Route::get('/departamentos', function(){ 
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('departamentos'); 
+    })->name('departamentos.view');
     Route::post('/departamentos/nuevo', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
             'name' => ['required','string','max:255'],
@@ -256,8 +280,15 @@ Route::middleware('auth')->group(function () {
         // Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('empleados.api.destroy');
     });
 
-    // Empleados (vista: lista usuarios con rol empleado)
-    Route::get('/empleados', function(){ return view('empleados'); })->name('empleados.index');
+    // Empleados (vista: lista usuarios con rol empleado) - solo admin
+    Route::get('/empleados', function(){ 
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('empleados'); 
+    })->name('empleados.index');
 
     // Migrar empleados (tabla empleados) a usuarios (tabla users) y asignar rol "empleado"
     Route::post('/empleados/migrar', function(\Illuminate\Http\Request $request){
@@ -349,7 +380,7 @@ Route::middleware('auth')->group(function () {
             'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
         ]);
         $user = \App\Models\User::findOrFail($data['user_id']);
-        $user->password = $data['password'];
+        $user->password = \Illuminate\Support\Facades\Hash::make($data['password']);
         $user->save();
         return redirect()->route('empleados.index');
     })->name('empleados.password');

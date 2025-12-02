@@ -12,13 +12,7 @@ class DepartmentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Department::query()->with(['parent', 'children']);
-
-        if ($request->filled('parent_id')) {
-            $query->where('parent_id', $request->integer('parent_id'));
-        }
-
-
+        $query = Department::query();
 
         // Búsqueda por nombre o código: admite ?q= o ?search=
         $term = $request->input('q', $request->input('search'));
@@ -39,18 +33,16 @@ class DepartmentController extends Controller
             'nombre' => ['required', 'string', 'max:255'],
             'codigo' => ['required', 'string', 'max:50', Rule::unique('departamentos', 'codigo')],
             'descripcion' => ['nullable', 'string'],
-            'parent_id' => ['nullable', 'integer', 'exists:departamentos,id'],
         ]);
-
 
         $department = Department::create($data);
 
-        return response()->json($department->load(['parent', 'children']), 201);
+        return response()->json($department, 201);
     }
 
     public function show(Department $department): JsonResponse
     {
-        return response()->json($department->load(['parent', 'children']));
+        return response()->json($department);
     }
 
     public function update(Request $request, Department $department): JsonResponse
@@ -59,16 +51,11 @@ class DepartmentController extends Controller
             'nombre' => ['sometimes', 'required', 'string', 'max:255'],
             'codigo' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('departamentos', 'codigo')->ignore($department->id)],
             'descripcion' => ['nullable', 'string'],
-            'parent_id' => ['nullable', 'integer', 'exists:departamentos,id'],
         ]);
-
-        if (isset($data['parent_id']) && (int)$data['parent_id'] === (int)$department->id) {
-            return response()->json(['message' => 'parent_id cannot be the same as the department id'], 422);
-        }
 
         $department->update($data);
 
-        return response()->json($department->load(['parent', 'children']));
+        return response()->json($department);
     }
 
     public function destroy(Department $department): JsonResponse

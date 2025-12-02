@@ -1,7 +1,6 @@
-@extends('layouts.app')
-  @section('content')
-  <div class="content-wrapper">
-    <section class="content pt-3">
+@extends('layouts')
+@section('content')
+  
       <div class="container-fluid">
         <div class="card">
           <div class="card-header"><h3 class="card-title"><i class="fas fa-file-signature mr-1"></i> Contratos</h3></div>
@@ -195,6 +194,5 @@
           </div>
         </div>
       </div>
-    </section>
-  </div>
+
 @endsection

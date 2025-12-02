@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\EmpresaPerfilController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\DB;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/inicio', [HomeController::class, 'index'])->name('inicio');
+
 
 // Authentication routes
 Route::get('/registro', [RegisterController::class, 'show'])->name('register');
@@ -22,11 +26,11 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
+Route::get('/home', [DashboardController::class, 'index'])->middleware('auth')->name('home');
 
 // Configuración y empresa
 Route::middleware('auth')->group(function () {
-
+    Route::view('/usuarios-config', 'usuarios_config')->name('usuarios.config');
     Route::view('/roles', 'roles')->name('roles.index');
     Route::view('/permissions', 'permissions')->name('permissions.index');
 
@@ -199,7 +203,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Departamentos (vista y CRUD)
-    Route::get('/departamentos')->name('departamentos');
+    Route::get('/departamentos', function(){ return view('departamentos'); })->name('departamentos.view');
     Route::post('/departamentos/nuevo', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
             'name' => ['required','string','max:255'],
@@ -446,7 +450,7 @@ Route::middleware('auth')->group(function () {
                 'user_id' => $u->id,
                 'numero_empleado' => 'USR-'.$u->id,
                 'nombre' => $u->name,
-                'apellido' => '',
+                'apellido' => '-',
                 'correo' => $u->email,
                 'fecha_nacimiento' => null,
                 'fecha_ingreso' => now()->toDateString(),
@@ -544,7 +548,6 @@ Route::middleware('auth')->group(function () {
             'empleado_id' => ['required','integer','exists:empleados,id'],
             'importe' => ['required','numeric','min:0'],
             'metodo' => ['required','string','max:50'],
-            'descripcion' => ['nullable','string','max:255'],
         ]);
         // Crear un recibo ad-hoc para vincular el pago manual
         $periodoId = \Illuminate\Support\Facades\DB::table('periodos_nomina')->orderByDesc('fecha_inicio')->value('id');

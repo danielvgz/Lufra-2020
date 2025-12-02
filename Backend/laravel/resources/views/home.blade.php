@@ -1,421 +1,246 @@
 <!doctype html>
 <html lang="es">
-<head>
+  <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard Nóminas</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-</head>
-<body class="hold-transition sidebar-mini">
-<?php
-use Illuminate\Support\Facades\DB;
-$empleados = DB::table('empleados')->count();
-$departamentos = DB::table('departamentos')->count();
-$contratos = DB::table('contratos')->count();
-$periodos = DB::table('periodos_nomina')->count();
-$recibos = DB::table('recibos')->count();
-$pagos = DB::table('pagos')->count();
-$esEmpleado = false;
-if (auth()->check()) {
-    $esEmpleado = DB::table('rol_usuario as ru')
-        ->join('roles as r','r.id','=','ru.rol_id')
-        ->where('ru.user_id', auth()->id())
-        ->where('r.nombre','empleado')
-        ->exists();
-}
-?>
-<div class="wrapper">
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a href="{{ url('/') }}" class="nav-link"><b>Nóminas</b> Dashboard</a>
-            </li>
-        </ul>
-        <ul class="navbar-nav ml-auto">
-            @auth
-                <li class="nav-item"><a href="{{ route('perfil') }}" class="nav-link">{{ auth()->user()->name }}</a></li>
-                <li class="nav-item">
-                    <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Cerrar sesión</button>
-                    </form>
-                </li>
-            @else
-                <li class="nav-item"><a href="{{ route('login') }}" class="btn btn-sm btn-primary">Iniciar sesión</a></li>
-            @endauth
-        </ul>
+    <title>Frontend - Bootstrap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+      <div class="container">
+        <a class="navbar-brand" href="#">Mi Empresa</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="#navMenu" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link active" href="#hero">Inicio</a></li>
+            <li class="nav-item"><a class="nav-link" href="#about">Nosotros</a></li>
+            <li class="nav-item"><a class="nav-link" href="#gallery">Galería</a></li>
+            <li class="nav-item"><a class="nav-link" href="#clients">Clientes</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contact">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
     </nav>
 
-    <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="{{ url('/') }}" class="brand-link">
-            <span class="brand-text font-weight-light">Sistema de Nóminas</span>
-        </a>
-        <div class="sidebar">
-            <nav class="mt-2">
-                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                    @if($esEmpleado)
-                    <li class="nav-item">
-                        <a href="#recibos-pagos" class="nav-link active">
-                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
-                            <p>Recibos y Pagos</p>
-                        </a>
-                    </li>
-                    @else
-                    <li class="nav-item">
-                        <a href="#" class="nav-link active">
-                            <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Dashboard</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('/empleados') }}" class="nav-link">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Empleados</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('/departamentos') }}" class="nav-link">
-                            <i class="nav-icon fas fa-sitemap"></i>
-                            <p>Departamentos</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('/contratos') }}" class="nav-link">
-                            <i class="nav-icon fas fa-file-signature"></i>
-                            <p>Contratos</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('/nominas') }}" class="nav-link">
-                            <i class="nav-icon fas fa-calendar-alt"></i>
-                            <p>Periodos de nómina</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('/recibos-pagos') }}" class="nav-link">
-                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
-                            <p>Recibos y Pagos</p>
-                        </a>
-                    </li>
-                    <li class="nav-item mt-3 has-treeview">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-cogs"></i>
-                            <p>
-                                Configuración
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ url('/usuarios-config') }}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Usuarios (básico)</p>
-                                </a>
-                            </li>
-                            @if(auth()->check() && auth()->user()->puede('asignar_roles'))
-                            <li class="nav-item">
-                                <a href="{{ url('/roles') }}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Roles</p>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->check() && auth()->user()->puede('asignar_roles'))
-                            <li class="nav-item">
-                                <a href="{{ url('/permissions') }}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Permisos</p>
-                                </a>
-                            </li>
-                            @endif
-                            <li class="nav-item">
-                                <a href="{{ url('/empresa/perfil') }}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Perfil de la empresa</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    @endif
-                </ul>
-            </nav>
-        </div>
-    </aside>
-
-    <div class="content-wrapper">
-        <section class="content pt-3">
-            <div class="container-fluid">
-@unless($esEmpleado)
-                <div class="row">
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-info">
-                            <div class="inner">
-                                <h3>{{ $empleados }}</h3>
-                                <p>Empleados</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-users"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-success">
-                            <div class="inner">
-                                <h3>{{ $departamentos }}</h3>
-                                <p>Departamentos</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-sitemap"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-warning">
-                            <div class="inner text-dark">
-                                <h3>{{ $contratos }}</h3>
-                                <p>Contratos</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-file-signature"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-primary">
-                            <div class="inner">
-                                <h3>{{ $periodos }}</h3>
-                                <p>Periodos de nómina</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-calendar-alt"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-danger">
-                            <div class="inner">
-                                <h3>{{ $recibos }}</h3>
-                                <p>Recibos</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6">
-                        <div class="small-box bg-secondary">
-                            <div class="inner">
-                                <h3>{{ $pagos }}</h3>
-                                <p>Pagos</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-money-check-alt"></i></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-tachometer-alt mr-1"></i> Resumen</h3>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">Último periodo de nómina:</p>
-                                <?php
-                                $ultimoPeriodo = DB::table('periodos_nomina')->orderByDesc('fecha_fin')->first();
-                                ?>
-                                @if($ultimoPeriodo)
-                                    <p><strong>{{ $ultimoPeriodo->codigo }}</strong> ({{ $ultimoPeriodo->fecha_inicio }} a {{ $ultimoPeriodo->fecha_fin }}) - Estado: {{ $ultimoPeriodo->estado }}</p>
-                                @else
-                                    <p>No hay periodos registrados.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Departamentos -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card" id="departamentos">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-sitemap mr-1"></i> Departamentos</h3>
-                            </div>
-                            <div class="card-body">
-                                <?php $deps = DB::table('departamentos')->select('codigo','nombre')->limit(10)->get(); ?>
-                                @if(count($deps))
-                                    <ul class="list-unstyled mb-0">
-                                        @foreach($deps as $d)
-                                            <li><i class="fas fa-square text-primary mr-1"></i> {{ $d->codigo }} - {{ $d->nombre }}</li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <p>No hay departamentos.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contratos -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card" id="contratos">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-file-signature mr-1"></i> Contratos</h3>
-                            </div>
-                            <div class="card-body">
-                                <?php $contratosList = DB::table('contratos')->select('id','tipo_contrato','frecuencia_pago','salario_base')->limit(10)->get(); ?>
-                                @if(count($contratosList))
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead><tr><th>ID</th><th>Tipo</th><th>Frecuencia</th><th>Salario</th></tr></thead>
-                                            <tbody>
-                                            @foreach($contratosList as $c)
-                                                <tr>
-                                                    <td>{{ $c->id }}</td>
-                                                    <td>{{ $c->tipo_contrato }}</td>
-                                                    <td>{{ $c->frecuencia_pago }}</td>
-                                                    <td>{{ number_format($c->salario_base, 2) }}</td>
-                                                </tr>
-                                            @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @else
-                                    <p>No hay contratos.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Periodos de nómina -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card" id="periodos">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-calendar-alt mr-1"></i> Periodos de nómina</h3>
-                            </div>
-                            <div class="card-body">
-                                <?php $periodosList = DB::table('periodos_nomina')->select('codigo','fecha_inicio','fecha_fin','estado')->orderByDesc('fecha_inicio')->limit(10)->get(); ?>
-                                @if(count($periodosList))
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead><tr><th>Código</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
-                                            <tbody>
-                                            @foreach($periodosList as $p)
-                                                <tr>
-                                                    <td>{{ $p->codigo }}</td>
-                                                    <td>{{ $p->fecha_inicio }}</td>
-                                                    <td>{{ $p->fecha_fin }}</td>
-                                                    <td>{{ $p->estado }}</td>
-                                                </tr>
-                                            @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @else
-                                    <p>No hay periodos.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-@endunless
-
-                <!-- Recibos y Pagos -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card" id="recibos-pagos">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-file-invoice-dollar mr-1"></i> Recibos y Pagos</h3>
-                            </div>
-                            <div class="card-body">
-                                <?php
-                                    if ($esEmpleado) {
-                                        $recibosList = DB::table('recibos as r')
-                                            ->join('empleados as e','e.id','=','r.empleado_id')
-                                            ->where('e.user_id', auth()->id())
-                                            ->select('r.id','r.empleado_id','r.neto','r.estado')
-                                            ->orderByDesc('r.id')->limit(10)->get();
-                                        $pagosList = DB::table('pagos as p')
-                                            ->join('recibos as r','r.id','=','p.recibo_id')
-                                            ->join('empleados as e','e.id','=','r.empleado_id')
-                                            ->where('e.user_id', auth()->id())
-                                            ->select('p.id','p.recibo_id','p.importe','p.metodo','p.estado')
-                                            ->orderByDesc('p.id')->limit(10)->get();
-                                    } else {
-                                        $recibosList = DB::table('recibos')->select('id','empleado_id','neto','estado')->orderByDesc('id')->limit(10)->get();
-                                        $pagosList = DB::table('pagos')->select('id','recibo_id','importe','metodo')->orderByDesc('id')->limit(10)->get();
-                                    }
-                                ?>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6>Recibos recientes</h6>
-                                        @if(count($recibosList))
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead><tr><th>ID</th><th>Empleado</th><th>Neto</th><th>Estado</th></tr></thead>
-                                                    <tbody>
-                                                    @foreach($recibosList as $r)
-                                                        <tr>
-                                                            <td>{{ $r->id }}</td>
-                                                            <td>{{ $r->empleado_id }}</td>
-                                                            <td>{{ number_format($r->neto, 2) }}</td>
-                                                            <td>{{ $r->estado }}</td>
-                                                        </tr>
-                                                    @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        @else
-                                            <p>No hay recibos.</p>
-                                        @endif
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>Pagos recientes</h6>
-                                        @if(count($pagosList))
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead><tr><th>ID</th><th>Recibo</th><th>Importe</th><th>Método</th><th>Estado</th>@if($esEmpleado)<th>Acciones</th>@endif</tr></thead>
-                                                    <tbody>
-                                                    @foreach($pagosList as $pg)
-                                                        <tr>
-                                                            <td>{{ $pg->id }}</td>
-                                                            <td>{{ $pg->recibo_id }}</td>
-                                                            <td>{{ number_format($pg->importe, 2) }}</td>
-                                                            <td>{{ $pg->metodo }}</td>
-                                                            <td><span class="badge badge-{{ ($pg->estado ?? 'pendiente') === 'aceptado' ? 'success' : (($pg->estado ?? 'pendiente') === 'rechazado' ? 'danger' : 'warning') }}">{{ $pg->estado ?? 'pendiente' }}</span></td>
-                                                            @if($esEmpleado)
-                                                            <td>
-                                                                @if(($pg->estado ?? 'pendiente') === 'pendiente')
-                                                                    <form method="POST" action="{{ route('pagos.aceptar', ['pago'=>$pg->id]) }}" class="d-inline">@csrf<button class="btn btn-xs btn-success">Aceptar</button></form>
-                                                                    <form method="POST" action="{{ route('pagos.rechazar', ['pago'=>$pg->id]) }}" class="d-inline" onsubmit="return confirm('¿Rechazar este pago?')">@csrf<button class="btn btn-xs btn-danger">Rechazar</button></form>
-                                                                @else
-                                                                    —
-                                                                @endif
-                                                            </td>
-                                                            @endif
-                                                        </tr>
-                                                    @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        @else
-                                            <p>No hay pagos.</p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+    <!-- HERO / CAROUSEL -->
+    <section id="hero" class="py-4">
+      <div class="container">
+        <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+          </div>
+          <div class="carousel-inner rounded shadow-sm">
+            <div class="carousel-item active">
+              <img src="https://picsum.photos/1200/500?random=1" class="d-block w-100" alt="Slide 1">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>Soluciones creativas</h5>
+                <p>Diseño y tecnología para tu negocio.</p>
+              </div>
             </div>
-        </section>
-    </div>
+            <div class="carousel-item">
+              <img src="https://picsum.photos/1200/500?random=2" class="d-block w-100" alt="Slide 2">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>Proyectos a medida</h5>
+                <p>Calidad, rapidez y soporte continuo.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <img src="https://picsum.photos/1200/500?random=3" class="d-block w-100" alt="Slide 3">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>Alcanza tus metas</h5>
+                <p>Transformamos ideas en resultados.</p>
+              </div>
+            </div>
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
+          </button>
+        </div>
+      </div>
+    </section>
 
-    <footer class="main-footer text-sm">
-        <div class="float-right d-none d-sm-inline">AdminLTE</div>
-        <strong>&copy; {{ date('Y') }}.</strong> Todos los derechos reservados.
+    <!-- ABOUT / WHO WE ARE -->
+    <section id="about" class="py-5">
+      <div class="container">
+        <div class="row align-items-center gy-4">
+         <div class="col-md-12">
+            <div class="col-md-6">
+            <h2 class="h3">Quiénes somos</h2>
+            <p class="text-muted">Somos una empresa dedicada a ofrecer soluciones tecnológicas y de diseño enfocadas en impulsar negocios. Contamos con un equipo multidisciplinario con experiencia en desarrollo, UX/UI y estrategia digital.</p>
+             </div>
+          </div>
+           <div class="col-md-6">
+                <h4 class="h6">Misión</h4>
+                <p class="small text-muted">Proporcionar productos y servicios digitales que ayuden a nuestros clientes a crecer de forma sostenible mediante innovación y soporte cercano.</p>
+              </div>
+           <div class="col-md-6">
+                <h4 class="h6">Visión</h4>
+                <p class="small text-muted">Ser referentes en soluciones digitales de alto impacto en la región, reconocidos por la calidad y el compromiso con el cliente.</p>
+              </div>
+          <div class="col-lg-12">
+            <h3 class="h5">Algunos de nuestros productos</h3>
+            <div class="row g-3 mt-2">
+              <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm">
+                  <img src="https://picsum.photos/600/300?random=21" class="card-img-top" alt="Producto 1">
+                  <div class="card-body">
+                    <h5 class="card-title">Producto A</h5>
+                    <p class="card-text small text-muted">Plataforma web a medida para gestión de clientes y procesos.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm">
+                  <img src="https://picsum.photos/600/300?random=22" class="card-img-top" alt="Producto 2">
+                  <div class="card-body">
+                    <h5 class="card-title">Producto B</h5>
+                    <p class="card-text small text-muted">App móvil para interacción de usuarios y seguimiento en tiempo real.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm">
+                  <img src="https://picsum.photos/600/300?random=23" class="card-img-top" alt="Producto 3">
+                  <div class="card-body">
+                    <h5 class="card-title">Producto C</h5>
+                    <p class="card-text small text-muted">Servicio de consultoría para transformación digital y optimización.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm">
+                  <img src="https://picsum.photos/600/300?random=24" class="card-img-top" alt="Producto 4">
+                  <div class="card-body">
+                    <h5 class="card-title">Producto D</h5>
+                    <p class="card-text small text-muted">Soluciones de e-commerce y tiendas online optimizadas para conversión.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="gallery" class="py-5 bg-light">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="h3">Galería</h2>
+          <p class="mb-0 text-muted">Haz click en las imágenes para verlas ampliadas.</p>
+        </div>
+        <div class="row g-3 gallery-grid">
+          <!-- Thumbnails -->
+          <!-- We'll use picsum placeholders; replace with tus imágenes -->
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1015"><img src="https://picsum.photos/400/300?image=1015" class="img-fluid rounded" alt="Thumb 1"></a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1025"><img src="https://picsum.photos/400/300?image=1025" class="img-fluid rounded" alt="Thumb 2"></a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1035"><img src="https://picsum.photos/400/300?image=1035" class="img-fluid rounded" alt="Thumb 3"></a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1045"><img src="https://picsum.photos/400/300?image=1045" class="img-fluid rounded" alt="Thumb 4"></a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1055"><img src="https://picsum.photos/400/300?image=1055" class="img-fluid rounded" alt="Thumb 5"></a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3">
+            <a href="#" class="gallery-item" data-bs-toggle="modal" data-src="https://picsum.photos/1200/800?image=1065"><img src="https://picsum.photos/400/300?image=1065" class="img-fluid rounded" alt="Thumb 6"></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para ver imagen ampliada -->
+      <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-body p-0">
+              <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              <img src="" id="galleryModalImg" class="w-100" alt="Imagen ampliada">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLIENTS / LOGOS -->
+    <section id="clients" class="py-5">
+      <div class="container">
+        <h2 class="h3 mb-4">Clientes</h2>
+        <div class="row g-3 align-items-center">
+          <div class="col-6 col-md-3 text-center p-3"><img src="https://picsum.photos/200/80?random=11" class="img-fluid" alt="Logo 1"></div>
+          <div class="col-6 col-md-3 text-center p-3"><img src="https://picsum.photos/200/80?random=12" class="img-fluid" alt="Logo 2"></div>
+          <div class="col-6 col-md-3 text-center p-3"><img src="https://picsum.photos/200/80?random=13" class="img-fluid" alt="Logo 3"></div>
+          <div class="col-6 col-md-3 text-center p-3"><img src="https://picsum.photos/200/80?random=14" class="img-fluid" alt="Logo 4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="py-5 bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <h2 class="h3">Contáctanos</h2>
+            <p class="text-muted">Rellena el formulario y nos pondremos en contacto contigo.</p>
+            <form id="contactForm" novalidate>
+              <div class="mb-3">
+                <label for="name" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="name" required>
+                <div class="invalid-feedback">Por favor ingresa tu nombre.</div>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+                <div class="invalid-feedback">Por favor ingresa un email válido.</div>
+              </div>
+              <div class="mb-3">
+                <label for="message" class="form-label">Mensaje</label>
+                <textarea id="message" class="form-control" rows="5" required></textarea>
+                <div class="invalid-feedback">Escribe tu mensaje.</div>
+              </div>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </form>
+          </div>
+          <div class="col-md-6">
+            <h3 class="h5">Información</h3>
+            <p class="mb-1"><strong>Teléfono:</strong> +34 600 000 000</p>
+            <p class="mb-1"><strong>Email:</strong> contacto@miempresa.com</p>
+            <p class="mb-0"><strong>Dirección:</strong> Calle Ejemplo 123, Ciudad</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-4 bg-dark text-light">
+      <div class="container d-flex justify-content-between align-items-center">
+        <small>&copy; <span id="year"></span> Mi Empresa. Todos los derechos reservados.</small>
+        <div>
+          <a href="#" class="text-light me-3"><i class="bi bi-twitter"></i></a>
+          <a href="#" class="text-light me-3"><i class="bi bi-facebook"></i></a>
+          <a href="#" class="text-light"><i class="bi bi-instagram"></i></a>
+        </div>
+      </div>
     </footer>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
-</body>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+  </body>
 </html>

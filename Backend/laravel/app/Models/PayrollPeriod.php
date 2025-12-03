@@ -22,6 +22,6 @@ class PayrollPeriod extends Model
 
     public function recibos()
     {
-        return $this->hasMany(Recibo::class, 'periodo_id');
+        return $this->hasMany(Recibo::class, 'periodo_nomina_id');
     }
 }

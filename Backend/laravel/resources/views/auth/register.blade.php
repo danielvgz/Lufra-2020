@@ -29,30 +29,42 @@
 
             <form method="POST" action="{{ route('register.post') }}">
                 @csrf
-                <div class="input-group mb-3">
-                    <input id="name" name="name" value="{{ old('name') }}" class="form-control" placeholder="Nombre" required autofocus />
+                <div class="input-group mb-1">
+                    <input id="name" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" placeholder="Nombre" required autofocus />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-user"></span></div>
                     </div>
                 </div>
-                <div class="input-group mb-3">
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" class="form-control" placeholder="Email" required />
+                @error('name')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
+                <div class="input-group mb-1">
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" placeholder="Email" required />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-envelope"></span></div>
                     </div>
                 </div>
-                <div class="input-group mb-3">
-                    <input id="password" name="password" type="password" class="form-control" placeholder="Contraseña" required />
+                @error('email')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
+                <div class="input-group mb-1">
+                    <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" placeholder="Contraseña" required />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-lock"></span></div>
                     </div>
                 </div>
-                <div class="input-group mb-3">
-                    <input id="password_confirmation" name="password_confirmation" type="password" class="form-control" placeholder="Confirmar contraseña" required />
+                @error('password')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
+                <div class="input-group mb-1">
+                    <input id="password_confirmation" name="password_confirmation" type="password" class="form-control @error('password_confirmation') is-invalid @enderror" placeholder="Confirmar contraseña" required />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-lock"></span></div>
                     </div>
                 </div>
+                @error('password_confirmation')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
                 <div class="row">
                     <div class="col-8">
                         <p class="mb-1">¿Ya tienes cuenta? <a href="{{ route('login') }}">Inicia sesión</a></p>

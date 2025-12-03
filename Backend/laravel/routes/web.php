@@ -30,7 +30,6 @@ Route::get('/home', [DashboardController::class, 'index'])->middleware('auth')->
 
 // Configuración y empresa
 Route::middleware('auth')->group(function () {
-    Route::view('/usuarios-config', 'usuarios_config')->name('usuarios.config');
     Route::view('/roles', 'roles')->name('roles.index');
     Route::view('/permissions', 'permissions')->name('permissions.index');
 
@@ -73,6 +72,86 @@ Route::middleware('auth')->group(function () {
     // Nóminas (periodos)
     Route::get('/nominas', function(){ return view('nominas'); })->name('nominas.index');
     Route::get('/recibos-pagos', function(){ return view('recibos_pagos'); })->name('recibos_pagos');
+
+    // CRUD Conceptos de pago
+    Route::get('/conceptos', function(){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('conceptos');
+    })->name('conceptos.view');
+    Route::post('/conceptos/crear', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['nombre' => ['required','string','max:100']]);
+        \Illuminate\Support\Facades\DB::table('conceptos_pago')->updateOrInsert(['nombre'=>$data['nombre']], ['created_at'=>now(),'updated_at'=>now()]);
+        return redirect()->route('conceptos.view')->with('success','Concepto guardado');
+    })->name('conceptos.crear');
+    Route::post('/conceptos/editar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer'],'nombre' => ['required','string','max:100']]);
+        \Illuminate\Support\Facades\DB::table('conceptos_pago')->where('id',$data['id'])->update(['nombre'=>$data['nombre'], 'updated_at'=>now()]);
+        return redirect()->route('conceptos.view')->with('success','Concepto actualizado');
+    })->name('conceptos.editar');
+    Route::post('/conceptos/eliminar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer']]);
+        \Illuminate\Support\Facades\DB::table('conceptos_pago')->where('id',$data['id'])->delete();
+        return redirect()->route('conceptos.view')->with('success','Concepto eliminado');
+    })->name('conceptos.eliminar');
+
+    // CRUD Métodos de pago
+    Route::get('/metodos', function(){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('metodos');
+    })->name('metodos.view');
+    Route::post('/metodos/crear', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['nombre' => ['required','string','max:50']]);
+        \Illuminate\Support\Facades\DB::table('metodos_pago')->updateOrInsert(['nombre'=>$data['nombre']], ['created_at'=>now(),'updated_at'=>now()]);
+        return redirect()->route('metodos.view')->with('success','Método guardado');
+    })->name('metodos.crear');
+    Route::post('/metodos/editar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer'],'nombre' => ['required','string','max:50']]);
+        \Illuminate\Support\Facades\DB::table('metodos_pago')->where('id',$data['id'])->update(['nombre'=>$data['nombre'], 'updated_at'=>now()]);
+        return redirect()->route('metodos.view')->with('success','Método actualizado');
+    })->name('metodos.editar');
+    Route::post('/metodos/eliminar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer']]);
+        \Illuminate\Support\Facades\DB::table('metodos_pago')->where('id',$data['id'])->delete();
+        return redirect()->route('metodos.view')->with('success','Método eliminado');
+    })->name('metodos.eliminar');
     Route::get('/contratos', function(\Illuminate\Http\Request $request){ 
         $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
             ->join('roles','roles.id','=','rol_usuario.rol_id')
@@ -107,7 +186,7 @@ Route::middleware('auth')->group(function () {
             if (array_key_exists($k, $data) && $data[$k] !== null && $data[$k] !== '') { $insert[$k] = $data[$k]; }
         }
         \Illuminate\Support\Facades\DB::table('contratos')->insert($insert);
-        return redirect()->route('contratos.index');
+        return redirect()->route('contratos.index')->with('success','Contrato creado correctamente');
     })->name('contratos.store');
     Route::post('/contratos/{id}', function(\Illuminate\Http\Request $request, $id){
         $request->validate(['id' => ['nullable']]);
@@ -133,11 +212,11 @@ Route::middleware('auth')->group(function () {
             $update['updated_at'] = now();
             \Illuminate\Support\Facades\DB::table('contratos')->where('id', $id)->update($update);
         }
-        return redirect()->route('contratos.index');
+        return redirect()->route('contratos.index')->with('success','Contrato actualizado correctamente');
     })->name('contratos.update');
     Route::post('/contratos/{id}/delete', function($id){
         \Illuminate\Support\Facades\DB::table('contratos')->where('id',$id)->delete();
-        return redirect()->route('contratos.index');
+        return redirect()->route('contratos.index')->with('success','Contrato eliminado correctamente');
     })->name('contratos.destroy');
     Route::get('/recibos-pagos/reportes', function(\Illuminate\Http\Request $request){
         $desde = $request->date('desde');
@@ -161,7 +240,7 @@ Route::middleware('auth')->group(function () {
             ->join('periodos_nomina as p','p.id','=','r.periodo_nomina_id')
             ->join('empleados as e','e.id','=','r.empleado_id')
             ->leftJoin('pagos as pg','pg.recibo_id','=','r.id')
-            ->select('p.codigo as periodo','p.fecha_inicio','p.fecha_fin','r.id as recibo_id','e.nombre','e.apellido','r.neto','pg.id as pago_id','pg.metodo','pg.importe','pg.estado')
+            ->select('p.codigo as periodo','p.fecha_inicio','p.fecha_fin','r.id as recibo_id','e.nombre','e.apellido','r.neto','pg.id as pago_id','pg.metodo','pg.importe','pg.estado','pg.referencia as descripcion')
             ->orderByDesc('p.fecha_inicio')
             ->orderByDesc('r.id');
         if ($desde) { $q->whereDate('p.fecha_inicio','>=',$desde); }
@@ -195,6 +274,7 @@ Route::middleware('auth')->group(function () {
                 break;
         }
         $codigo = strtoupper(substr($data['frecuencia'],0,1)).'-'.$inicio->format('Ymd');
+        $existe = \Illuminate\Support\Facades\DB::table('periodos_nomina')->where('codigo',$codigo)->exists();
         \Illuminate\Support\Facades\DB::table('periodos_nomina')->updateOrInsert(
             ['codigo' => $codigo],
             [
@@ -205,8 +285,41 @@ Route::middleware('auth')->group(function () {
                 'updated_at' => now(),
             ]
         );
-        return redirect()->route('nominas.index');
+        $msg = $existe ? 'El período ya existía, datos actualizados.' : 'Período creado correctamente.';
+        return redirect()->route('nominas.index')->with('success', $msg);
     })->name('nominas.periodo.crear');
+    Route::post('/nominas/periodo/cerrar', function(\Illuminate\Http\Request $request){
+        $data = $request->validate([
+            'periodo_id' => ['required','integer','exists:periodos_nomina,id'],
+        ]);
+        // Cerrar el período
+        \Illuminate\Support\Facades\DB::table('periodos_nomina')->where('id',$data['periodo_id'])->update([
+            'estado' => 'cerrado',
+            'updated_at' => now(),
+        ]);
+        // Generar recibos para todos los empleados activos que no tengan recibo en este período
+        $empleadosActivos = \Illuminate\Support\Facades\DB::table('empleados')->where('estado','activo')->select('id')->get();
+        foreach ($empleadosActivos as $emp) {
+            $existe = \Illuminate\Support\Facades\DB::table('recibos')
+                ->where('empleado_id',$emp->id)
+                ->where('periodo_nomina_id',$data['periodo_id'])
+                ->exists();
+            if (!$existe) {
+                // Por ahora, bruto=0, neto=0; se calculará después. Esto habilita "Pagos por asignar".
+                \Illuminate\Support\Facades\DB::table('recibos')->insert([
+                    'empleado_id' => $emp->id,
+                    'periodo_nomina_id' => $data['periodo_id'],
+                    'bruto' => 0,
+                    // deducciones opcional según esquema
+                    'neto' => 0,
+                    'estado' => 'aprobado',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+        return redirect()->route('recibos_pagos')->with('success','Período cerrado y recibos generados. Asigne pagos a los empleados del período.');
+    })->name('nominas.periodo.cerrar');
     // Nómina y pagos (API JSON)
     Route::prefix('/nomina')->group(function(){
         Route::get('/periodos', [\App\Http\Controllers\PayrollController::class, 'listPeriods'])->name('nomina.periodos');
@@ -239,7 +352,7 @@ Route::middleware('auth')->group(function () {
             'nombre'=>$data['name'], 'codigo'=>$data['code'], 'descripcion'=>$data['description'] ?? null,
             'created_at'=>now(),'updated_at'=>now()
         ]);
-        return redirect()->route('departamentos.view');
+        return redirect()->route('departamentos.view')->with('success','Departamento creado correctamente');
     })->name('departamentos.nuevo');
     Route::post('/departamentos/editar', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
@@ -253,12 +366,12 @@ Route::middleware('auth')->group(function () {
             'nombre'=>$data['name'], 'codigo'=>$data['code'], 'descripcion'=>$data['description'] ?? null,
             'updated_at'=>now()
         ]);
-        return redirect()->route('departamentos.view');
+        return redirect()->route('departamentos.view')->with('success','Departamento actualizado correctamente');
     })->name('departamentos.editar');
     Route::post('/departamentos/eliminar', function(\Illuminate\Http\Request $request){
         $data = $request->validate(['id' => ['required','integer']]);
         DB::table('departamentos')->where('id',$data['id'])->delete();
-        return redirect()->route('departamentos.view');
+        return redirect()->route('departamentos.view')->with('success','Departamento eliminado correctamente');
     })->name('departamentos.eliminar');
 
     // Departamentos (JSON API)
@@ -331,7 +444,7 @@ Route::middleware('auth')->group(function () {
             $rolEmpleadoId = DB::table('roles')->insertGetId(['nombre'=>'empleado','descripcion'=>null,'created_at'=>now(),'updated_at'=>now()]);
         }
         DB::table('rol_usuario')->updateOrInsert(['user_id'=>$uid,'rol_id'=>$rolEmpleadoId], []);
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Usuario creado correctamente');
     })->name('empleados.crear');
     Route::post('/empleados/store', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
@@ -368,7 +481,7 @@ Route::middleware('auth')->group(function () {
             'created_at'=>now(),
             'updated_at'=>now(),
         ]);
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Empleado creado correctamente');
     })->name('empleados.store');
     Route::post('/empleados/password', function(\Illuminate\Http\Request $request){
         $data = $request->validate([
@@ -382,7 +495,7 @@ Route::middleware('auth')->group(function () {
         $user = \App\Models\User::findOrFail($data['user_id']);
         $user->password = \Illuminate\Support\Facades\Hash::make($data['password']);
         $user->save();
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Contraseña actualizada correctamente');
     })->name('empleados.password');
 
     Route::post('/empleados/update', function(\Illuminate\Http\Request $request){
@@ -420,7 +533,7 @@ Route::middleware('auth')->group(function () {
             'notas'=>$data['notas'] ?? null,
             'updated_at'=>now(),
         ]);
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Empleado actualizado correctamente');
     })->name('empleados.update');
 
     Route::post('/empleados/destroy', function(\Illuminate\Http\Request $request){
@@ -428,7 +541,7 @@ Route::middleware('auth')->group(function () {
             'id' => ['required','integer'],
         ]);
         \Illuminate\Support\Facades\DB::table('empleados')->where('id',$data['id'])->delete();
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Empleado eliminado correctamente');
     })->name('empleados.destroy');
     Route::get('/empleados/detalle/{id}', function($id){
         $u = \Illuminate\Support\Facades\DB::table('users')->select('id','name','email')->find($id);
@@ -445,7 +558,7 @@ Route::middleware('auth')->group(function () {
         $user->name = $data['name'];
         $user->email = $data['email'];
         $user->save();
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Usuario actualizado correctamente');
     })->name('empleados.editar');
 
     Route::post('/empleados/asignar-departamento', function(\Illuminate\Http\Request $request){
@@ -455,7 +568,7 @@ Route::middleware('auth')->group(function () {
         ]);
         // Mapear departamento 'departamentos' -> 'departments' para cumplir FK
         $depSrc = \Illuminate\Support\Facades\DB::table('departamentos')->where('id',$data['department_id'])->first();
-        if (!$depSrc) { return redirect()->route('empleados.index'); }
+        if (!$depSrc) { return redirect()->route('empleados.index')->with('error','Departamento no encontrado'); }
         $depIdFk = \Illuminate\Support\Facades\DB::table('departments')->where('code',$depSrc->codigo)->value('id');
         if (!$depIdFk) {
             $depIdFk = \Illuminate\Support\Facades\DB::table('departments')->insertGetId([
@@ -498,7 +611,7 @@ Route::middleware('auth')->group(function () {
                 'updated_at' => now(),
             ]);
         }
-        return redirect()->route('empleados.index');
+        return redirect()->route('empleados.index')->with('success','Departamento asignado correctamente');
     })->name('empleados.asignar_departamento');
 
     Route::post('/empleados/eliminar', function(\Illuminate\Http\Request $request){
@@ -550,6 +663,7 @@ Route::middleware('auth')->group(function () {
             'recibo_id' => ['required','integer','exists:recibos,id'],
             'importe' => ['required','numeric','min:0'],
             'metodo' => ['required','string','max:50'],
+            'concepto' => ['nullable','string','max:100'],
         ]);
         // upsert pago por recibo
         $exists = \Illuminate\Support\Facades\DB::table('pagos')->where('recibo_id',$data['recibo_id'])->exists();
@@ -557,6 +671,7 @@ Route::middleware('auth')->group(function () {
             \Illuminate\Support\Facades\DB::table('pagos')->where('recibo_id',$data['recibo_id'])->update([
                 'importe' => $data['importe'],
                 'metodo' => $data['metodo'],
+                'referencia' => $data['concepto'] ?? null, // guardar concepto en referencia
                 'estado' => 'pendiente',
                 'updated_at' => now(),
             ]);
@@ -565,6 +680,7 @@ Route::middleware('auth')->group(function () {
                 'recibo_id' => $data['recibo_id'],
                 'importe' => $data['importe'],
                 'metodo' => $data['metodo'],
+                'referencia' => $data['concepto'] ?? null, // guardar concepto en referencia
                 'estado' => 'pendiente',
                 'created_at' => now(),
                 'updated_at' => now(),

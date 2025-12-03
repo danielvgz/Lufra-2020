@@ -12,7 +12,7 @@ class Recibo extends Model
     protected $table = 'recibos';
 
     protected $fillable = [
-        'periodo_id','empleado_id','bruto','deducciones','detalle_deducciones','neto','estado','locked_at'
+        'periodo_nomina_id','empleado_id','bruto','detalle_deducciones','neto','estado','locked_at'
     ];
 
     protected $casts = [
@@ -30,7 +30,7 @@ class Recibo extends Model
 
     public function periodo()
     {
-        return $this->belongsTo(PayrollPeriod::class, 'periodo_id');
+        return $this->belongsTo(PayrollPeriod::class, 'periodo_nomina_id');
     }
 
     public function pagos()

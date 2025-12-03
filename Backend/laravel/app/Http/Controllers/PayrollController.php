@@ -55,7 +55,7 @@ class PayrollController extends Controller
                 ];
 
                 $recibo = Recibo::firstOrNew([
-                    'periodo_id' => $period->id,
+                    'periodo_nomina_id' => $period->id,
                     'empleado_id' => $emp->id,
                 ]);
 
@@ -82,7 +82,7 @@ class PayrollController extends Controller
             return response()->json(['message' => 'Periodo ya cerrado.'], 422);
         }
         DB::transaction(function () use ($period) {
-            Recibo::where('periodo_id', $period->id)
+            Recibo::where('periodo_nomina_id', $period->id)
                 ->whereNull('locked_at')
                 ->update(['estado' => 'aprobado', 'locked_at' => now(), 'updated_at' => now()]);
             $period->estado = 'cerrado';
@@ -104,7 +104,7 @@ class PayrollController extends Controller
 
         $count = 0;
         DB::transaction(function () use ($period, $metodo, $ref, &$count) {
-            $recibos = Recibo::where('periodo_id', $period->id)->where('estado','aprobado')->get();
+            $recibos = Recibo::where('periodo_nomina_id', $period->id)->where('estado','aprobado')->get();
             foreach ($recibos as $r) {
                 $exists = Pago::where('recibo_id',$r->id)->exists();
                 if ($exists) { continue; }
@@ -137,8 +137,8 @@ class PayrollController extends Controller
             $rows = DB::table('recibos as r')
                 ->join('empleados as e','e.id','=','r.empleado_id')
                 ->leftJoin('departments as d','d.id','=','e.department_id')
-                ->when($periodoId, fn($q) => $q->where('r.periodo_id',$periodoId))
-                ->selectRaw('COALESCE(d.name, "Sin depto") as departamento, SUM(r.bruto) as bruto, SUM(r.deducciones) as deducciones, SUM(r.neto) as neto, COUNT(*) as recibos')
+                ->when($periodoId, fn($q) => $q->where('r.periodo_nomina_id',$periodoId))
+                ->selectRaw('COALESCE(d.name, "Sin depto") as departamento, SUM(r.bruto) as bruto, SUM(r.neto) as neto, COUNT(*) as recibos')
                 ->groupBy('departamento')
                 ->orderBy('departamento')
                 ->get();
@@ -146,9 +146,9 @@ class PayrollController extends Controller
         }
 
         $rows = DB::table('recibos as r')
-            ->join('periodos_nomina as p','p.id','=','r.periodo_id')
-            ->when($periodoId, fn($q) => $q->where('r.periodo_id',$periodoId))
-            ->selectRaw('p.codigo, SUM(r.bruto) as bruto, SUM(r.deducciones) as deducciones, SUM(r.neto) as neto, COUNT(*) as recibos')
+            ->join('periodos_nomina as p','p.id','=','r.periodo_nomina_id')
+            ->when($periodoId, fn($q) => $q->where('r.periodo_nomina_id',$periodoId))
+            ->selectRaw('p.codigo, SUM(r.bruto) as bruto, SUM(r.neto) as neto, COUNT(*) as recibos')
             ->groupBy('p.codigo')
             ->orderByDesc(DB::raw('MIN(p.fecha_inicio)'))
             ->get();
@@ -159,7 +159,7 @@ class PayrollController extends Controller
     {
         $periodoId = $request->integer('periodo_id');
         $query = Recibo::query();
-        if ($periodoId) { $query->where('periodo_id', $periodoId); }
+        if ($periodoId) { $query->where('periodo_nomina_id', $periodoId); }
         $totImp = 0.0; $totSS = 0.0; $totDed = 0.0; $totBruto = 0.0; $totNeto = 0.0; $count = 0;
         foreach ($query->get() as $r) {
             $det = is_array($r->detalle_deducciones) ? $r->detalle_deducciones : (json_decode($r->detalle_deducciones ?? '[]', true) ?: []);
@@ -167,7 +167,7 @@ class PayrollController extends Controller
             $ss  = (float)($det['seguridad_social'] ?? 0);
             $totImp += $imp;
             $totSS  += $ss;
-            $totDed += (float)$r->deducciones;
+            $totDed += ($imp + $ss);
             $totBruto += (float)$r->bruto;
             $totNeto  += (float)$r->neto;
             $count++;
@@ -187,7 +187,7 @@ class PayrollController extends Controller
     {
         $period = PayrollPeriod::findOrFail($periodoId);
         $recibos = Recibo::with('empleado')
-            ->where('periodo_id', $period->id)
+            ->where('periodo_nomina_id', $period->id)
             ->where('estado','aprobado')
             ->get();
         $lines = [];

@@ -45,39 +45,45 @@ class AdminEmployeeSeeder extends Seeder
         }
         DB::table('rol_usuario')->updateOrInsert(['user_id'=>$adminId,'rol_id'=>$rolAdminId], []);
 
-        // Employee user
-        $empEmail = 'empleado@example.com';
-        $empleadoUserId = DB::table('users')->where('email',$empEmail)->value('id');
-        if (!$empleadoUserId) {
-            $empleadoUserId = DB::table('users')->insertGetId([
-                'name' => 'Empleado Demo',
-                'email' => $empEmail,
-                'password' => Hash::make('password'),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-        DB::table('rol_usuario')->updateOrInsert(['user_id'=>$empleadoUserId,'rol_id'=>$rolEmpleadoId], []);
+        // Employee users for testing
+        $demoEmployees = [
+            ['name'=>'Empleado Demo','email'=>'empleado@example.com','numero'=>'EMP100'],
+            ['name'=>'Usuario Prueba 1','email'=>'usuario1@example.com','numero'=>'EMP101'],
+            ['name'=>'Usuario Prueba 2','email'=>'usuario2@example.com','numero'=>'EMP102'],
+        ];
+        foreach ($demoEmployees as $emp) {
+            $userId = DB::table('users')->where('email',$emp['email'])->value('id');
+            if (!$userId) {
+                $userId = DB::table('users')->insertGetId([
+                    'name' => $emp['name'],
+                    'email' => $emp['email'],
+                    'password' => Hash::make('password'),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+            DB::table('rol_usuario')->updateOrInsert(['user_id'=>$userId,'rol_id'=>$rolEmpleadoId], []);
 
-        // Link to empleados table (create if not exists)
-        $existeEmpleado = DB::table('empleados')->where('correo',$empEmail)->exists();
-        if (!$existeEmpleado) {
-            DB::table('empleados')->insert([
-                'numero_empleado' => 'EMP100',
-                'nombre' => 'Empleado',
-                'apellido' => 'Demo',
-                'correo' => $empEmail,
-                'fecha_ingreso' => $now->toDateString(),
-                'estado' => 'activo',
-                'user_id' => $empleadoUserId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        } else {
-            DB::table('empleados')->where('correo',$empEmail)->update([
-                'user_id' => $empleadoUserId,
-                'updated_at' => $now,
-            ]);
+            // Link to empleados table (create if not exists)
+            $exists = DB::table('empleados')->where('correo',$emp['email'])->exists();
+            if (!$exists) {
+                DB::table('empleados')->insert([
+                    'numero_empleado' => $emp['numero'],
+                    'nombre' => explode(' ', $emp['name'])[0],
+                    'apellido' => explode(' ', $emp['name'])[1] ?? 'Demo',
+                    'correo' => $emp['email'],
+                    'fecha_ingreso' => $now->toDateString(),
+                    'estado' => 'activo',
+                    'user_id' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                DB::table('empleados')->where('correo',$emp['email'])->update([
+                    'user_id' => $userId,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
 }

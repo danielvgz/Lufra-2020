@@ -43,6 +43,7 @@
             <th>Pago</th>
             <th>Método</th>
             <th>Importe pago</th>
+            <th>Descripción</th>
             <th>Estado</th>
           </tr>
         </thead>

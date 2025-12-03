@@ -203,13 +203,14 @@ if (auth()->check()) {
                                         $recibosList = DB::table('recibos as r')
                                             ->join('empleados as e','e.id','=','r.empleado_id')
                                             ->where('e.user_id', auth()->id())
-                                            ->select('r.id','r.empleado_id','r.neto','r.estado')
+                                            ->select('r.neto','r.estado')
                                             ->orderByDesc('r.id')->limit(10)->get();
                                         $pagosList = DB::table('pagos as p')
                                             ->join('recibos as r','r.id','=','p.recibo_id')
                                             ->join('empleados as e','e.id','=','r.empleado_id')
                                             ->where('e.user_id', auth()->id())
-                                            ->select('p.id','p.recibo_id','p.importe','p.metodo','p.estado')
+                                            ->whereIn('p.estado', ['aceptado','rechazado'])
+                                            ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id')
                                             ->orderByDesc('p.id')->limit(10)->get();
                                     } else {
                                         $recibosList = DB::table('recibos')->select('id','empleado_id','neto','estado')->orderByDesc('id')->limit(10)->get();
@@ -222,12 +223,10 @@ if (auth()->check()) {
                                         @if(count($recibosList))
                                             <div class="table-responsive">
                                                 <table class="table table-sm">
-                                                    <thead><tr><th>ID</th><th>Empleado</th><th>Neto</th><th>Estado</th></tr></thead>
+                                                    <thead><tr><th>Neto</th><th>Estado</th></tr></thead>
                                                     <tbody>
                                                     @foreach($recibosList as $r)
                                                         <tr>
-                                                            <td>{{ $r->id }}</td>
-                                                            <td>{{ $r->empleado_id }}</td>
                                                             <td>{{ number_format($r->neto, 2) }}</td>
                                                             <td>{{ $r->estado }}</td>
                                                         </tr>
@@ -240,26 +239,33 @@ if (auth()->check()) {
                                         @endif
                                     </div>
                                     <div class="col-md-6">
-                                        <h6>Pagos recientes</h6>
+                                        <h6>Historial de pagos</h6>
+                                        @if($esEmpleado)
+                                            <form method="GET" action="{{ url()->current() }}" class="form-inline mb-2">
+                                                <input type="text" name="q" value="{{ request('q','') }}" class="form-control form-control-sm mr-2" placeholder="Buscar por método o descripción">
+                                                <label class="mr-2">Desde</label>
+                                                <input type="date" name="desde" value="{{ request('desde') }}" class="form-control form-control-sm mr-2">
+                                                <label class="mr-2">Hasta</label>
+                                                <input type="date" name="hasta" value="{{ request('hasta') }}" class="form-control form-control-sm mr-2">
+                                                <button class="btn btn-sm btn-outline-secondary">Filtrar</button>
+                                            </form>
+                                        @endif
                                         @if(count($pagosList))
                                             <div class="table-responsive">
                                                 <table class="table table-sm">
-                                                    <thead><tr><th>ID</th><th>Recibo</th><th>Importe</th><th>Método</th><th>Estado</th>@if($esEmpleado)<th>Acciones</th>@endif</tr></thead>
+                                                    <thead><tr><th>Fecha</th><th>Importe</th><th>Método</th><th>Descripción</th><th>Estado</th>@if($esEmpleado)<th>Acciones</th>@endif</tr></thead>
                                                     <tbody>
                                                     @foreach($pagosList as $pg)
                                                         <tr>
-                                                            <td>{{ $pg->id }}</td>
-                                                            <td>{{ $pg->recibo_id }}</td>
+                                                            <td>{{ \Illuminate\Support\Carbon::parse($pg->respondido_en ?? $pg->updated_at)->format('Y-m-d') }}</td>
                                                             <td>{{ number_format($pg->importe, 2) }}</td>
                                                             <td>{{ $pg->metodo }}</td>
+                                                            <td>{{ $pg->descripcion ?? '-' }}</td>
                                                             <td><span class="badge badge-{{ ($pg->estado ?? 'pendiente') === 'aceptado' ? 'success' : (($pg->estado ?? 'pendiente') === 'rechazado' ? 'danger' : 'warning') }}">{{ $pg->estado ?? 'pendiente' }}</span></td>
                                                             @if($esEmpleado)
                                                             <td>
-                                                                @if(($pg->estado ?? 'pendiente') === 'pendiente')
-                                                                    <form method="POST" action="{{ route('pagos.aceptar', ['pago'=>$pg->id]) }}" class="d-inline">@csrf<button class="btn btn-xs btn-success">Aceptar</button></form>
-                                                                    <form method="POST" action="{{ route('pagos.rechazar', ['pago'=>$pg->id]) }}" class="d-inline" onsubmit="return confirm('¿Rechazar este pago?')">@csrf<button class="btn btn-xs btn-danger">Rechazar</button></form>
-                                                                @else
-                                                                    —
+                                                                @if(($pg->estado ?? 'pendiente') !== 'pendiente')
+                                                                    <a class="btn btn-xs btn-outline-primary" target="_blank" href="{{ route('nomina.recibo.pdf', ['recibo'=>$pg->recibo_id ?? 0]) }}">Imprimir recibo</a>
                                                                 @endif
                                                             </td>
                                                             @endif

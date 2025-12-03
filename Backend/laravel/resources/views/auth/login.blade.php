@@ -29,18 +29,24 @@
 
             <form method="POST" action="{{ route('login.post') }}">
                 @csrf
-                <div class="input-group mb-3">
-                    <input id="email" name="email" type="email" class="form-control" placeholder="Email" value="{{ old('email') }}" required autofocus />
+                <div class="input-group mb-1">
+                    <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email" value="{{ old('email') }}" required autofocus />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-envelope"></span></div>
                     </div>
                 </div>
-                <div class="input-group mb-3">
-                    <input id="password" name="password" type="password" class="form-control" placeholder="Contraseña" required />
+                @error('email')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
+                <div class="input-group mb-1">
+                    <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" placeholder="Contraseña" required />
                     <div class="input-group-append">
                         <div class="input-group-text"><span class="fas fa-lock"></span></div>
                     </div>
                 </div>
+                @error('password')
+                    <div class="text-danger small mb-2">{{ $message }}</div>
+                @enderror
                 <div class="row mb-3">
                     <div class="col-8">
                         <div class="icheck-primary">

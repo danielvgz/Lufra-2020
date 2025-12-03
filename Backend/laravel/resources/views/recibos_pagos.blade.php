@@ -17,25 +17,24 @@
         <div class="card">
           <div class="card-header"><h3 class="card-title"><i class="fas fa-file-invoice-dollar mr-1"></i> Mis pagos</h3></div>
           <div class="card-body">
-            <?php $pagos = \Illuminate\Support\Facades\DB::table('pagos as p')->join('recibos as r','r.id','=','p.recibo_id')->join('empleados as e','e.id','=','r.empleado_id')->where('e.user_id', auth()->id())->select('p.id','p.importe','p.metodo','p.estado','r.id as recibo_id')->orderByDesc('p.id')->limit(50)->get(); ?>
+            <?php $pagos = \Illuminate\Support\Facades\DB::table('pagos as p')->join('recibos as r','r.id','=','p.recibo_id')->join('empleados as e','e.id','=','r.empleado_id')->where('e.user_id', auth()->id())->select('p.id','p.importe','p.metodo','p.estado','p.referencia','r.id as recibo_id')->orderByDesc('p.id')->limit(50)->get(); ?>
             @if(count($pagos))
               <div class="table-responsive">
                 <table class="table table-sm">
-                  <thead><tr><th>Pago</th><th>Recibo</th><th>Importe</th><th>Método</th><th>Estado</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Importe</th><th>Método</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
                   <tbody>
                   @foreach($pagos as $p)
                     <tr>
-                      <td>#{{ $p->id }}</td>
-                      <td>#{{ $p->recibo_id }}</td>
                       <td>{{ number_format($p->importe,2) }}</td>
                       <td>{{ $p->metodo }}</td>
+                      <td>{{ $p->referencia ?? '-' }}</td>
                       <td><span class="badge badge-{{ $p->estado === 'aceptado' ? 'success' : ($p->estado === 'rechazado' ? 'danger' : 'warning') }}">{{ $p->estado ?? 'pendiente' }}</span></td>
                       <td>
                         @if(($p->estado ?? 'pendiente') === 'pendiente')
                           <form method="POST" action="{{ route('pagos.aceptar', ['pago'=>$p->id]) }}" class="d-inline">@csrf<button class="btn btn-xs btn-success">Aceptar</button></form>
                           <form method="POST" action="{{ route('pagos.rechazar', ['pago'=>$p->id]) }}" class="d-inline" onsubmit="return confirm('¿Rechazar este pago?')">@csrf<button class="btn btn-xs btn-danger">Rechazar</button></form>
                         @else
-                          —
+                          <a class="btn btn-xs btn-outline-primary" target="_blank" href="{{ route('nomina.recibo.pdf', ['recibo'=>$p->recibo_id]) }}">Imprimir recibo</a>
                         @endif
                       </td>
                     </tr>
@@ -83,10 +82,14 @@
         <div class="card mt-3">
           <div class="card-header d-flex align-items-center justify-content-between">
             <h3 class="card-title mb-0"><i class="fas fa-money-check-alt mr-1"></i> Pagos por asignar (recibos sin pago)</h3>
-            <form method="GET" action="{{ route('recibos_pagos') }}" class="form-inline">
-              <input type="text" name="q" value="{{ request('q','') }}" class="form-control form-control-sm mr-2" placeholder="Buscar empleado o #recibo">
-              <button class="btn btn-sm btn-outline-secondary">Buscar</button>
-            </form>
+            <div class="d-flex align-items-center">
+              <form method="GET" action="{{ route('recibos_pagos') }}" class="form-inline mr-2">
+                <input type="text" name="q" value="{{ request('q','') }}" class="form-control form-control-sm mr-2" placeholder="Buscar empleado o #recibo">
+                <button class="btn btn-sm btn-outline-secondary">Buscar</button>
+              </form>
+              <a href="{{ route('conceptos.view') }}" class="btn btn-sm btn-outline-secondary mr-2">Conceptos</a>
+              <a href="{{ route('metodos.view') }}" class="btn btn-sm btn-outline-secondary">Métodos</a>
+            </div>
           </div>
           <div class="card-body">
             <?php
@@ -94,7 +97,18 @@
               $recibosQuery = \Illuminate\Support\Facades\DB::table('recibos as r')
                 ->leftJoin('pagos as p','p.recibo_id','=','r.id')
                 ->join('empleados as e','e.id','=','r.empleado_id')
-                ->whereNull('p.id');
+                ->join('periodos_nomina as pn','pn.id','=','r.periodo_nomina_id')
+                ->leftJoin('contratos as c','c.empleado_id','=','r.empleado_id')
+                ->whereNull('p.id')
+                // Solo recibos de períodos cerrados y empleados con contrato activo dentro del período
+                ->where('pn.estado','cerrado')
+                ->where(function($w){
+                  $w->whereColumn('c.fecha_inicio','<=','pn.fecha_fin')
+                    ->where(function($w2){
+                      $w2->whereNull('c.fecha_fin')
+                         ->orWhereColumn('c.fecha_fin','>=','pn.fecha_inicio');
+                    });
+                });
               if ($q) {
                 $recibosQuery->where(function($w) use ($q){
                   $w->where('e.nombre','like',"%{$q}%")
@@ -107,7 +121,7 @@
             @if(count($recibosSinPago))
               <div class="table-responsive">
                 <table class="table table-sm">
-                  <thead><tr><th>Recibo</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Método</th><th>Asignar</th></tr></thead>
+                  <thead><tr><th>Recibo</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Método</th><th>Concepto</th><th>Asignar</th></tr></thead>
                   <tbody>
                     @foreach($recibosSinPago as $r)
                       <tr>
@@ -121,9 +135,29 @@
                             <input type="number" step="0.01" min="0" class="form-control form-control-sm mr-2" name="importe" value="{{ $r->neto }}" required>
                         </td>
                         <td>
+                            <?php $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); ?>
                             <select name="metodo" class="form-control form-control-sm mr-2" required>
-                              <option value="Transferencia">Transferencia</option>
-                              <option value="Efectivo">Efectivo</option>
+                              @forelse($metodos as $m)
+                                <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
+                              @empty
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Pago móvil">Pago móvil</option>
+                              @endforelse
+                            </select>
+                        </td>
+                        <td>
+                            <?php $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); ?>
+                            <select name="concepto" class="form-control form-control-sm mr-2">
+                              <option value="">-- Seleccionar --</option>
+                              @forelse($conceptos as $c)
+                                <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
+                              @empty
+                                <option value="Abono de nómina">Abono de nómina</option>
+                                <option value="Deducción">Deducción</option>
+                                <option value="Bono de salario">Bono de salario</option>
+                                <option value="Compensación">Compensación</option>
+                              @endforelse
                             </select>
                         </td>
                         <td>
@@ -157,16 +191,28 @@
               <label class="mr-2">Importe</label>
               <input type="number" step="0.01" min="0" name="importe" class="form-control form-control-sm mr-2" required>
               <label class="mr-2">Método</label>
+              <?php $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); ?>
               <select name="metodo" class="form-control form-control-sm mr-2" required>
-                <option value="Transferencia">Transferencia</option>
-                <option value="Efectivo">Efectivo</option>
+                @forelse($metodos as $m)
+                  <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
+                @empty
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Pago móvil">Pago móvil</option>
+                @endforelse
               </select>
               <label class="mr-2">Concepto</label>
+              <?php $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); ?>
               <select name="descripcion" class="form-control form-control-sm mr-2">
                 <option value="">-- Seleccionar --</option>
-                <option value="Impuesto">Impuesto</option>
-                <option value="Pago seguro social">Pago seguro social</option>
-                <option value="Deducción">Deducción</option>
+                @forelse($conceptos as $c)
+                  <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
+                @empty
+                  <option value="Abono de nómina">Abono de nómina</option>
+                  <option value="Deducción">Deducción</option>
+                  <option value="Bono de salario">Bono de salario</option>
+                  <option value="Compensación">Compensación</option>
+                @endforelse
               </select>
               <button class="btn btn-sm btn-primary">Crear pago</button>
             </form>

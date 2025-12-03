@@ -210,7 +210,7 @@ if (auth()->check()) {
                                             ->join('empleados as e','e.id','=','r.empleado_id')
                                             ->where('e.user_id', auth()->id())
                                             ->whereIn('p.estado', ['aceptado','rechazado'])
-                                            ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id')
+                                            ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id','p.respondido_en','p.updated_at','p.created_at')
                                             ->orderByDesc('p.id')->limit(10)->get();
                                     } else {
                                         $recibosList = DB::table('recibos')->select('id','empleado_id','neto','estado')->orderByDesc('id')->limit(10)->get();
@@ -257,7 +257,8 @@ if (auth()->check()) {
                                                     <tbody>
                                                     @foreach($pagosList as $pg)
                                                         <tr>
-                                                            <td>{{ \Illuminate\Support\Carbon::parse($pg->respondido_en ?? $pg->updated_at)->format('Y-m-d') }}</td>
+                                                            <?php $fechaPago = isset($pg->respondido_en) && $pg->respondido_en ? $pg->respondido_en : (isset($pg->updated_at) && $pg->updated_at ? $pg->updated_at : ($pg->created_at ?? null)); ?>
+                                                            <td>{{ $fechaPago ? \Illuminate\Support\Carbon::parse($fechaPago)->format('Y-m-d') : '—' }}</td>
                                                             <td>{{ number_format($pg->importe, 2) }}</td>
                                                             <td>{{ $pg->metodo }}</td>
                                                             <td>{{ $pg->descripcion ?? '-' }}</td>

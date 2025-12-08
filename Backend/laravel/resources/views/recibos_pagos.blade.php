@@ -1,8 +1,7 @@
 @extends('layouts')
+
 @section('content')
-
-
-      <div class="container-fluid">
+  <div class="container-fluid">
         <?php
           $esEmpleado = false;
           if (auth()->check()) {
@@ -88,7 +87,8 @@
                 <button class="btn btn-sm btn-outline-secondary">Buscar</button>
               </form>
               <a href="{{ route('conceptos.view') }}" class="btn btn-sm btn-outline-secondary mr-2">Conceptos</a>
-              <a href="{{ route('metodos.view') }}" class="btn btn-sm btn-outline-secondary">Métodos</a>
+              <a href="{{ route('metodos.view') }}" class="btn btn-sm btn-outline-secondary mr-2">Métodos</a>
+              <a href="{{ route('monedas.view') }}" class="btn btn-sm btn-outline-secondary">Monedas</a>
             </div>
           </div>
           <div class="card-body">

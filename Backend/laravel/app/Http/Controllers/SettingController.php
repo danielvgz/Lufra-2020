@@ -2,63 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Settings;
+use App\Models\User;
+//use App\Models\Groups;
+//use App\Models\Grouped;
+//use App\Models\Positions;
+//use App\Models\Currencies;
 use Illuminate\Http\Request;
+
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        //$currency = Currencies::get('symbol');
+        //$users_in_business = User::get();
+        //$groups_in_business = Groups::get();
+        //$positions_in_business = Positions::get();
+        //$roles = Roles::get();
+        //$groupeds = Grouped::join('users','users.id', 'groupeds.user_id')->join('groups','groups.user_id','users.id')->select('users.name as users')->get(); // Groupeds should'select alls users groups grouped in this fields
+        return view('settings');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request, Settings $settings )
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+       
+       if ($image = $request->file('image')) {
+            $destinationPath = 'storage/settings/';
+            $profileImage = date('YmdHis') . "." . $image->getClientOriginalExtension();
+            $image->move($destinationPath, $profileImage);
+        }else {
+             $profileImage = config('settings.image');
+        }
+        
+        $data = $request->except('_token');
+        $data['image'] = $profileImage;
+        foreach ($data as $key => $value) {
+            $setting = Settings::firstOrCreate(['key' => $key]);
+            $setting->value = $value;
+            $setting->save();
+        }
+        return redirect()->route('settings.index')->with('success', 'Success, you settingss has been updated.');;
     }
 }

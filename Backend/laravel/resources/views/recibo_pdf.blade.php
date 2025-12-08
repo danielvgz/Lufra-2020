@@ -36,6 +36,26 @@
         <tr><th>Neto a pagar</th><th class="right">{{ number_format($recibo->neto, 2) }}</th></tr>
     </table>
 
+    @if($recibo->pagos->count() > 0)
+        <h2>Pagos</h2>
+        <table>
+            <tr><th>Fecha</th><th>Método</th><th>Referencia</th><th>Estado</th><th class="right">Importe</th></tr>
+            @foreach($recibo->pagos as $pago)
+                <tr>
+                    <td>{{ $pago->pagado_at ? $pago->pagado_at->format('d/m/Y') : $pago->created_at->format('d/m/Y') }}</td>
+                    <td>{{ $pago->metodo }}</td>
+                    <td>{{ $pago->referencia }}</td>
+                    <td>{{ $pago->estado }}</td>
+                    <td class="right">{{ number_format($pago->importe, 2) }}</td>
+                </tr>
+            @endforeach
+            <tr>
+                <th colspan="4" class="right">Total pagado/procesado:</th>
+                <th class="right">{{ number_format($recibo->pagos->sum('importe'), 2) }}</th>
+            </tr>
+        </table>
+    @endif
+
     <p class="muted">Estado: {{ $recibo->estado }} {{ $recibo->locked_at ? '(aprobado)' : '' }}</p>
 </body>
 </html>

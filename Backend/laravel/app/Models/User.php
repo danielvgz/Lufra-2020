@@ -55,4 +55,14 @@ class User extends Authenticatable
             ->where('pr.permiso_id', $permisoId)
             ->exists();
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->notifications()->where('read', false);
+    }
 }

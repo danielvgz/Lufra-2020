@@ -1,9 +1,7 @@
 @extends('layouts')
-@section('content')
 
- 
-      <div class="container-fluid">
-        <div class="row">
+@section('content')
+  <div class="row">
           <div class="col-md-5">
             <div class="card">
               <div class="card-header"><h3 class="card-title"><i class="fas fa-user-plus mr-1"></i> Agregar nuevo usuario</h3></div>
@@ -94,7 +92,7 @@
               </div>
             </div>
           </div>
-        </div>
-        @endif
-      </div>
+    </div>
+    @endif
+  </div>
 @endsection

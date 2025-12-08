@@ -12,7 +12,14 @@
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
       <div class="container">
-        <a class="navbar-brand" href="#">Mi Empresa</a>
+        <a class="navbar-brand" href="#">
+           @if (config('app.name')) 
+              {{ config('app.name') }}
+           @else
+            <p> Mi empresa </p>
+           @endif
+          
+          </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="#navMenu" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>

@@ -3,15 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear Cuenta</title>
+    <title>Restablecer Contraseña</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <style>
-        .register-page {
+        .login-page {
             background: #f4f6f9;
         }
-        .register-logo {
+        .login-logo {
             display: none;
         }
         .card {
@@ -19,27 +19,27 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 8px;
         }
-        .register-card-body {
+        .login-card-body {
             padding: 2rem;
         }
-        .register-header {
+        .login-header {
             text-align: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid #e9ecef;
         }
-        .register-header img {
+        .login-header img {
             max-height: 60px;
             margin-bottom: 10px;
         }
-        .register-header .brand-text {
+        .login-header .brand-text {
             color: #343a40;
             font-size: 1.25rem;
             font-weight: 600;
             display: block;
             margin-bottom: 5px;
         }
-        .register-header .company-info {
+        .login-header .company-info {
             color: #6c757d;
             font-size: 0.75rem;
             display: block;
@@ -60,11 +60,11 @@
         }
     </style>
 </head>
-<body class="hold-transition register-page">
-<div class="register-box">
+<body class="hold-transition login-page">
+<div class="login-box">
     <div class="card">
-        <div class="card-body register-card-body">
-            <div class="register-header">
+        <div class="card-body login-card-body">
+            <div class="login-header">
                 @if(config('settings.image'))
                     <img src="{{ asset('storage/settings/') }}/{{ config('settings.image') }}" alt="Logo">
                 @endif
@@ -78,8 +78,8 @@
                     <small class="company-info"><i class="fas fa-envelope mr-1"></i>{{ config('settings.app_email') }}</small>
                 @endif
             </div>
-
-            <p class="login-box-msg text-center"><i class="fas fa-user-plus mr-2"></i>Crea tu cuenta</p>
+            
+            <p class="login-box-msg text-center"><i class="fas fa-lock mr-2"></i>Restablecer tu contraseña</p>
 
             @if($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -94,20 +94,9 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('register.post') }}">
+            <form method="POST" action="{{ route('password.update') }}">
                 @csrf
-                <div class="form-group">
-                    <label for="name" class="small text-muted">Nombre Completo</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        </div>
-                        <input id="name" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" placeholder="Juan Pérez" required autofocus>
-                    </div>
-                    @error('name')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
+                <input type="hidden" name="token" value="{{ $token }}">
 
                 <div class="form-group">
                     <label for="email" class="small text-muted">Correo Electrónico</label>
@@ -115,7 +104,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                         </div>
-                        <input id="email" name="email" type="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" placeholder="correo@ejemplo.com" required>
+                        <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" placeholder="correo@ejemplo.com" value="{{ $email ?? old('email') }}" required autofocus>
                     </div>
                     @error('email')
                         <small class="text-danger">{{ $message }}</small>
@@ -123,7 +112,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="password" class="small text-muted">Contraseña</label>
+                    <label for="password" class="small text-muted">Nueva Contraseña</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
@@ -136,7 +125,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="password_confirmation" class="small text-muted">Confirmar Contraseña</label>
+                    <label for="password_confirmation" class="small text-muted">Confirmar Nueva Contraseña</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
@@ -149,14 +138,14 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    <i class="fas fa-user-plus mr-2"></i>Crear Cuenta
+                    <i class="fas fa-check mr-2"></i>Restablecer Contraseña
                 </button>
             </form>
 
             <hr class="my-3">
 
             <p class="text-center mb-0 small">
-                ¿Ya tienes cuenta? <a href="{{ route('login') }}" class="font-weight-bold">Inicia sesión aquí</a>
+                <a href="{{ route('login') }}" class="font-weight-bold"><i class="fas fa-arrow-left mr-1"></i>Volver al inicio de sesión</a>
             </p>
         </div>
     </div>

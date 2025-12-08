@@ -3,11 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\EmpresaPerfilController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
@@ -25,6 +28,12 @@ Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
 Route::get('/home', [DashboardController::class, 'index'])->middleware('auth')->name('home');
 
@@ -152,6 +161,47 @@ Route::middleware('auth')->group(function () {
         \Illuminate\Support\Facades\DB::table('metodos_pago')->where('id',$data['id'])->delete();
         return redirect()->route('metodos.view')->with('success','Método eliminado');
     })->name('metodos.eliminar');
+
+    // CRUD Monedas
+    Route::get('/monedas', function(){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        return view('monedas');
+    })->name('monedas.view');
+    Route::post('/monedas/crear', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['nombre' => ['required','string','max:50'],'codigo' => ['required','string','max:3'],'simbolo' => ['nullable','string','max:10']]);
+        \Illuminate\Support\Facades\DB::table('monedas')->updateOrInsert(['nombre'=>$data['nombre'],'codigo'=>$data['codigo']], ['simbolo'=>$data['simbolo'],'created_at'=>now(),'updated_at'=>now()]);
+        return redirect()->route('monedas.view')->with('success','Moneda guardada');
+    })->name('monedas.crear');
+    Route::post('/monedas/editar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer'],'nombre' => ['required','string','max:50'],'codigo' => ['required','string','max:3'],'simbolo' => ['nullable','string','max:10']]);
+        \Illuminate\Support\Facades\DB::table('monedas')->where('id',$data['id'])->update(['nombre'=>$data['nombre'],'codigo'=>$data['codigo'],'simbolo'=>$data['simbolo'], 'updated_at'=>now()]);
+        return redirect()->route('monedas.view')->with('success','Moneda actualizada');
+    })->name('monedas.editar');
+    Route::post('/monedas/eliminar', function(\Illuminate\Http\Request $request){
+        $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles','roles.id','=','rol_usuario.rol_id')
+            ->where('rol_usuario.user_id', auth()->id())
+            ->value('roles.nombre');
+        if ($role !== 'administrador') { abort(403); }
+        $data = $request->validate(['id'=>['required','integer']]);
+        \Illuminate\Support\Facades\DB::table('monedas')->where('id',$data['id'])->delete();
+        return redirect()->route('monedas.view')->with('success','Moneda eliminada');
+    })->name('monedas.eliminar');
+
     Route::get('/contratos', function(\Illuminate\Http\Request $request){ 
         $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
             ->join('roles','roles.id','=','rol_usuario.rol_id')
@@ -185,7 +235,15 @@ Route::middleware('auth')->group(function () {
         foreach (['tipo_contrato','periodo_prueba_fin','fecha_fin'] as $k) {
             if (array_key_exists($k, $data) && $data[$k] !== null && $data[$k] !== '') { $insert[$k] = $data[$k]; }
         }
-        \Illuminate\Support\Facades\DB::table('contratos')->insert($insert);
+        $contratoId = \Illuminate\Support\Facades\DB::table('contratos')->insertGetId($insert);
+        
+        // Obtener nombre del empleado
+        $empleado = \Illuminate\Support\Facades\DB::table('empleados')->where('id', $data['empleado_id'])->first();
+        $empleadoNombre = $empleado ? trim($empleado->nombre . ' ' . $empleado->apellido) : 'Empleado';
+        
+        // Notificar a otros administradores
+        \App\Http\Controllers\NotificationHelper::notifyContratoCreado($contratoId, $empleadoNombre, auth()->id());
+        
         return redirect()->route('contratos.index')->with('success','Contrato creado correctamente');
     })->name('contratos.store');
     Route::post('/contratos/{id}', function(\Illuminate\Http\Request $request, $id){
@@ -211,11 +269,34 @@ Route::middleware('auth')->group(function () {
         if (!empty($update)) {
             $update['updated_at'] = now();
             \Illuminate\Support\Facades\DB::table('contratos')->where('id', $id)->update($update);
+            
+            // Obtener nombre del empleado
+            $contrato = \Illuminate\Support\Facades\DB::table('contratos')->where('id', $id)->first();
+            if ($contrato) {
+                $empleado = \Illuminate\Support\Facades\DB::table('empleados')->where('id', $contrato->empleado_id)->first();
+                $empleadoNombre = $empleado ? trim($empleado->nombre . ' ' . $empleado->apellido) : 'Empleado';
+                
+                // Notificar a otros administradores
+                \App\Http\Controllers\NotificationHelper::notifyContratoEditado($id, $empleadoNombre, auth()->id());
+            }
         }
         return redirect()->route('contratos.index')->with('success','Contrato actualizado correctamente');
     })->name('contratos.update');
     Route::post('/contratos/{id}/delete', function($id){
+        // Obtener información del contrato antes de eliminarlo
+        $contrato = \Illuminate\Support\Facades\DB::table('contratos')->where('id', $id)->first();
+        $empleadoNombre = 'Empleado';
+        
+        if ($contrato) {
+            $empleado = \Illuminate\Support\Facades\DB::table('empleados')->where('id', $contrato->empleado_id)->first();
+            $empleadoNombre = $empleado ? trim($empleado->nombre . ' ' . $empleado->apellido) : 'Empleado';
+        }
+        
         \Illuminate\Support\Facades\DB::table('contratos')->where('id',$id)->delete();
+        
+        // Notificar a otros administradores
+        \App\Http\Controllers\NotificationHelper::notifyContratoEliminado($empleadoNombre, auth()->id());
+        
         return redirect()->route('contratos.index')->with('success','Contrato eliminado correctamente');
     })->name('contratos.destroy');
     Route::get('/recibos-pagos/reportes', function(\Illuminate\Http\Request $request){
@@ -306,7 +387,7 @@ Route::middleware('auth')->group(function () {
                 ->exists();
             if (!$existe) {
                 // Por ahora, bruto=0, neto=0; se calculará después. Esto habilita "Pagos por asignar".
-                \Illuminate\Support\Facades\DB::table('recibos')->insert([
+                $reciboId = \Illuminate\Support\Facades\DB::table('recibos')->insertGetId([
                     'empleado_id' => $emp->id,
                     'periodo_nomina_id' => $data['periodo_id'],
                     'bruto' => 0,
@@ -316,6 +397,8 @@ Route::middleware('auth')->group(function () {
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                // Notificar al empleado sobre el nuevo recibo
+                \App\Http\Controllers\NotificationHelper::notifyReciboCreado($reciboId, $emp->id);
             }
         }
         return redirect()->route('recibos_pagos')->with('success','Período cerrado y recibos generados. Asigne pagos a los empleados del período.');
@@ -348,10 +431,14 @@ Route::middleware('auth')->group(function () {
             'description' => ['nullable','string'],
             'parent_id' => ['nullable','integer','exists:departamentos,id'],
             ]);
-        DB::table('departamentos')->insert([
+        $deptoId = DB::table('departamentos')->insertGetId([
             'nombre'=>$data['name'], 'codigo'=>$data['code'], 'descripcion'=>$data['description'] ?? null,
             'created_at'=>now(),'updated_at'=>now()
         ]);
+        
+        // Notificar a otros administradores
+        \App\Http\Controllers\NotificationHelper::notifyDepartamentoCreado($deptoId, $data['name'], auth()->id());
+        
         return redirect()->route('departamentos.view')->with('success','Departamento creado correctamente');
     })->name('departamentos.nuevo');
     Route::post('/departamentos/editar', function(\Illuminate\Http\Request $request){
@@ -366,11 +453,24 @@ Route::middleware('auth')->group(function () {
             'nombre'=>$data['name'], 'codigo'=>$data['code'], 'descripcion'=>$data['description'] ?? null,
             'updated_at'=>now()
         ]);
+        
+        // Notificar a otros administradores
+        \App\Http\Controllers\NotificationHelper::notifyDepartamentoEditado($data['id'], $data['name'], auth()->id());
+        
         return redirect()->route('departamentos.view')->with('success','Departamento actualizado correctamente');
     })->name('departamentos.editar');
     Route::post('/departamentos/eliminar', function(\Illuminate\Http\Request $request){
         $data = $request->validate(['id' => ['required','integer']]);
+        
+        // Obtener nombre del departamento antes de eliminarlo
+        $departamento = DB::table('departamentos')->where('id',$data['id'])->first();
+        $nombreDepto = $departamento ? $departamento->nombre : 'Departamento';
+        
         DB::table('departamentos')->where('id',$data['id'])->delete();
+        
+        // Notificar a otros administradores
+        \App\Http\Controllers\NotificationHelper::notifyDepartamentoEliminado($nombreDepto, auth()->id());
+        
         return redirect()->route('departamentos.view')->with('success','Departamento eliminado correctamente');
     })->name('departamentos.eliminar');
 
@@ -623,37 +723,200 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('empleados.index');
     })->name('empleados.eliminar');
 
+    // Notificaciones
+    Route::get('/notificaciones', function(){ return view('notificaciones'); })->name('notificaciones.view');
+    Route::get('/notifications/all', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.all');
+    Route::get('/notifications/unread', [\App\Http\Controllers\NotificationController::class, 'unread'])->name('notifications.unread');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark_all_read');
+    Route::post('/notifications/delete-read', [\App\Http\Controllers\NotificationController::class, 'deleteRead'])->name('notifications.delete_read');
+    Route::delete('/notifications/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
+    
+    // Ruta de prueba para crear notificación directa
+    Route::get('/notifications/create-direct', function(){
+        try {
+            $userId = auth()->id();
+            
+            // Crear notificación directamente en BD
+            $id = DB::table('notifications')->insertGetId([
+                'user_id' => $userId,
+                'type' => 'departamento_creado',
+                'title' => 'Prueba Directa',
+                'message' => 'Esta notificación fue creada directamente en la BD a las ' . now()->format('H:i:s'),
+                'data' => json_encode(['test' => true, 'departamento_id' => 999]),
+                'read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            $notification = DB::table('notifications')->where('id', $id)->first();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación creada directamente en BD',
+                'notification_id' => $id,
+                'notification' => $notification,
+                'check_at' => url('/notificaciones'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
+        }
+    })->name('notifications.create_direct');
+    
+    // Ruta de prueba para notificaciones de departamentos
+    Route::get('/notifications/test-departamento', function(){
+        try {
+            $userId = auth()->id();
+            
+            // Simular creación de departamento
+            \App\Http\Controllers\NotificationHelper::notifyDepartamentoCreado(999, 'Departamento de Prueba', $userId);
+            
+            $count = DB::table('notifications')->where('user_id', '!=', $userId)->count();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación de departamento creada',
+                'notifications_created' => $count,
+                'note' => 'Las notificaciones fueron enviadas a otros administradores, no a ti mismo',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
+        }
+    })->name('notifications.test_departamento');
+    
+    // Ruta de prueba para crear notificaciones
+    Route::get('/notifications/test', function(){
+        try {
+            // Verificar tabla
+            $tableExists = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'");
+            if (empty($tableExists)) {
+                return response()->json([
+                    'error' => 'La tabla notifications no existe. Ejecutar: php artisan migrate',
+                    'solution' => 'Ejecuta: php artisan migrate',
+                ], 500);
+            }
+            
+            // Crear notificación de prueba
+            $userId = auth()->id();
+            DB::table('notifications')->insert([
+                'user_id' => $userId,
+                'type' => 'test',
+                'title' => 'Notificación de Prueba',
+                'message' => 'Esta es una notificación de prueba creada en ' . now()->format('Y-m-d H:i:s'),
+                'data' => json_encode(['test' => true]),
+                'read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            $count = DB::table('notifications')->where('user_id', $userId)->count();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación de prueba creada',
+                'total_notifications' => $count,
+                'user_id' => $userId,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
+        }
+    })->name('notifications.test');
+    
+    Route::get('/notifications/debug', function(){
+        try {
+            $userId = auth()->id();
+            
+            // Verificar tabla
+            $tableExists = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'");
+            
+            if (empty($tableExists)) {
+                return response()->json([
+                    'error' => 'La tabla notifications NO existe',
+                    'solution' => 'Ejecuta: php artisan migrate',
+                ], 500);
+            }
+            
+            // Obtener notificaciones
+            $notifications = DB::table('notifications')
+                ->where('user_id', $userId)
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            // Obtener todas las notificaciones (para debug)
+            $allNotifications = DB::table('notifications')->get();
+            
+            // Verificar usuarios admin
+            $admins = DB::table('users')
+                ->join('rol_usuario', 'users.id', '=', 'rol_usuario.user_id')
+                ->join('roles', 'roles.id', '=', 'rol_usuario.rol_id')
+                ->where('roles.nombre', 'administrador')
+                ->select('users.id', 'users.name', 'users.email')
+                ->get();
+            
+            return response()->json([
+                'status' => 'OK',
+                'user_id' => $userId,
+                'user_name' => auth()->user()->name,
+                'total_notifications' => $notifications->count(),
+                'total_all_notifications' => $allNotifications->count(),
+                'notifications' => $notifications,
+                'all_notifications' => $allNotifications,
+                'administrators' => $admins,
+                'test_url' => url('/notifications/test'),
+                'test_depto_url' => url('/notifications/test-departamento'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
+        }
+    })->name('notifications.debug');
+
     // Pagos: aceptación/rechazo por empleado
     Route::post('/pagos/{pago}/aceptar', function(int $pago){
         $uid = auth()->id();
-        $ok = \Illuminate\Support\Facades\DB::table('pagos as p')
+        $pagoData = \Illuminate\Support\Facades\DB::table('pagos as p')
             ->join('recibos as r','r.id','=','p.recibo_id')
             ->join('empleados as e','e.id','=','r.empleado_id')
             ->where('p.id',$pago)
             ->where('e.user_id',$uid)
-            ->exists();
-        if (!$ok) { abort(403); }
+            ->select('p.id', 'e.id as empleado_id')
+            ->first();
+        if (!$pagoData) { abort(403); }
         \Illuminate\Support\Facades\DB::table('pagos')->where('id',$pago)->update([
             'estado' => 'aceptado',
             'respondido_en' => now(),
             'updated_at' => now(),
         ]);
+        \App\Http\Controllers\NotificationHelper::notifyReciboAceptado($pago, $pagoData->empleado_id);
         return redirect()->back();
     })->name('pagos.aceptar');
     Route::post('/pagos/{pago}/rechazar', function(int $pago){
         $uid = auth()->id();
-        $ok = \Illuminate\Support\Facades\DB::table('pagos as p')
+        $pagoData = \Illuminate\Support\Facades\DB::table('pagos as p')
             ->join('recibos as r','r.id','=','p.recibo_id')
             ->join('empleados as e','e.id','=','r.empleado_id')
             ->where('p.id',$pago)
             ->where('e.user_id',$uid)
-            ->exists();
-        if (!$ok) { abort(403); }
+            ->select('p.id', 'e.id as empleado_id')
+            ->first();
+        if (!$pagoData) { abort(403); }
         \Illuminate\Support\Facades\DB::table('pagos')->where('id',$pago)->update([
             'estado' => 'rechazado',
             'respondido_en' => now(),
             'updated_at' => now(),
         ]);
+        \App\Http\Controllers\NotificationHelper::notifyReciboRechazado($pago, $pagoData->empleado_id);
         return redirect()->back();
     })->name('pagos.rechazar');
 
@@ -665,13 +928,16 @@ Route::middleware('auth')->group(function () {
             'metodo' => ['required','string','max:50'],
             'concepto' => ['nullable','string','max:100'],
         ]);
+        
+        $recibo = \Illuminate\Support\Facades\DB::table('recibos')->where('id',$data['recibo_id'])->first();
+        
         // upsert pago por recibo
         $exists = \Illuminate\Support\Facades\DB::table('pagos')->where('recibo_id',$data['recibo_id'])->exists();
         if ($exists) {
             \Illuminate\Support\Facades\DB::table('pagos')->where('recibo_id',$data['recibo_id'])->update([
                 'importe' => $data['importe'],
                 'metodo' => $data['metodo'],
-                'referencia' => $data['concepto'] ?? null, // guardar concepto en referencia
+                'referencia' => $data['concepto'] ?? null,
                 'estado' => 'pendiente',
                 'updated_at' => now(),
             ]);
@@ -680,11 +946,15 @@ Route::middleware('auth')->group(function () {
                 'recibo_id' => $data['recibo_id'],
                 'importe' => $data['importe'],
                 'metodo' => $data['metodo'],
-                'referencia' => $data['concepto'] ?? null, // guardar concepto en referencia
+                'referencia' => $data['concepto'] ?? null,
                 'estado' => 'pendiente',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            // Notificar al empleado sobre el nuevo recibo
+            if ($recibo) {
+                \App\Http\Controllers\NotificationHelper::notifyReciboCreado($data['recibo_id'], $recibo->empleado_id);
+            }
         }
         return redirect()->route('recibos_pagos');
     })->name('pagos.asignar');
@@ -776,6 +1046,11 @@ Route::middleware('auth')->group(function () {
         DB::table('roles')->where('id',$rid)->delete();
         return redirect()->route('roles.index');
     })->name('roles.eliminar');
+
+    //Configuración del perfil de la empresa
+
+  Route::get('/configuracion', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/configuracion', [SettingController::class, 'store'])->name('settings.store');
 
     // Permisos: crear y asignar a roles
     Route::post('/permissions/nuevo', function(\Illuminate\Http\Request $request){

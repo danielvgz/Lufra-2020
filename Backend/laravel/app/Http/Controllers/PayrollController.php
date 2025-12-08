@@ -125,7 +125,7 @@ class PayrollController extends Controller
     public function receiptPdf(Recibo $recibo)
     {
         // Sin librería PDF: devolver HTML imprimible para exportar a PDF desde el navegador
-        return response()->view('recibo_pdf', ['recibo' => $recibo->load('empleado','periodo')]);
+        return response()->view('recibo_pdf', ['recibo' => $recibo->load('empleado','periodo','pagos')]);
     }
 
     public function reports(Request $request): JsonResponse

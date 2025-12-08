@@ -1,8 +1,7 @@
 @extends('layouts')
-@section('content')
 
-      <div class="container-fluid">
-        <div class="card">
+@section('content')
+  <div class="card">
           <div class="card-header">
             <h3 class="card-title"><i class="fas fa-building mr-1"></i> Perfil de la empresa</h3>
           </div>
@@ -45,8 +44,7 @@
                 @endif
               </div>
               <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Guardar</button>
-            </form>
-          </div>
-        </div>
-      </div>
+      </form>
+    </div>
+  </div>
 @endsection

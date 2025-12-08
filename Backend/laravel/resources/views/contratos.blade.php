@@ -1,8 +1,7 @@
 @extends('layouts')
+
 @section('content')
-  
-      <div class="container-fluid">
-        <div class="card">
+  <div class="card">
           <div class="card-header"><h3 class="card-title"><i class="fas fa-file-signature mr-1"></i> Contratos</h3></div>
           <div class="card-body">
             <p class="text-muted">Gestión de contratos laborales: búsqueda, tipificación y alertas de vencimientos.</p>
@@ -191,8 +190,7 @@
             @else
               <p>No hay contratos registrados.</p>
             @endif
-          </div>
-        </div>
       </div>
-
+    </div>
+  </div>
 @endsection

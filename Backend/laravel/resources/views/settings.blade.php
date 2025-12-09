@@ -6,10 +6,7 @@
                 <h3 class="card-title"><i class="fas fa-cog mr-1"></i> Configuración de la Aplicación</h3>
             </div>
             <div class="card-body">
-                @if(session('status'))
-                    <div class="alert alert-success">{{ session('status') }}</div>
-                @endif
-                
+           
                 <form action="{{ route('settings.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 

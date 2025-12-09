@@ -9,6 +9,46 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
   <style>
+    /* Temas de color */
+    .skin-blue .navbar { background-color: #3c8dbc !important; }
+    .skin-blue .btn-primary { background-color: #3c8dbc; border-color: #367fa9; }
+    .skin-blue .info-box-icon { background-color: #3c8dbc; }
+    
+    .skin-blue-light .navbar { background-color: #3c8dbc !important; }
+    .skin-blue-light .btn-primary { background-color: #3c8dbc; border-color: #367fa9; }
+    
+    .skin-green .navbar { background-color: #00a65a !important; }
+    .skin-green .btn-primary { background-color: #00a65a; border-color: #008d4c; }
+    .skin-green .info-box-icon { background-color: #00a65a; }
+    
+    .skin-green-light .navbar { background-color: #00a65a !important; }
+    .skin-green-light .btn-primary { background-color: #00a65a; border-color: #008d4c; }
+    
+    .skin-black .navbar { background-color: #222d32 !important; }
+    .skin-black .btn-primary { background-color: #222d32; border-color: #1a2226; }
+    .skin-black .info-box-icon { background-color: #222d32; }
+    
+    .skin-red .navbar { background-color: #dd4b39 !important; }
+    .skin-red .btn-primary { background-color: #dd4b39; border-color: #d73925; }
+    .skin-red .info-box-icon { background-color: #dd4b39; }
+    
+    .skin-red-light .navbar { background-color: #dd4b39 !important; }
+    .skin-red-light .btn-primary { background-color: #dd4b39; border-color: #d73925; }
+    
+    .skin-yellow .navbar { background-color: #f39c12 !important; }
+    .skin-yellow .btn-primary { background-color: #f39c12; border-color: #e08e0b; }
+    .skin-yellow .info-box-icon { background-color: #f39c12; }
+    
+    .skin-yellow-light .navbar { background-color: #f39c12 !important; }
+    .skin-yellow-light .btn-primary { background-color: #f39c12; border-color: #e08e0b; }
+    
+    .skin-purple .navbar { background-color: #605ca8 !important; }
+    .skin-purple .btn-primary { background-color: #605ca8; border-color: #555299; }
+    .skin-purple .info-box-icon { background-color: #605ca8; }
+    
+    .skin-purple-light .navbar { background-color: #605ca8 !important; }
+    .skin-purple-light .btn-primary { background-color: #605ca8; border-color: #555299; }
+
     #notification-dropdown .nav-link {
       cursor: pointer;
     }
@@ -86,8 +126,8 @@
     }
   </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-  <nav class="navbar navbar-expand navbar-dark bg-dark">
+<body class="d-flex flex-column min-vh-100 {{ config('settings.theme', 'skin-blue') }}">
+  <nav class="navbar navbar-expand navbar-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="{{ route('home') }}">Gestión Nóminas</a>
       <ul class="navbar-nav ml-auto">

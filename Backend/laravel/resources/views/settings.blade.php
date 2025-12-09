@@ -204,5 +204,39 @@
             </div>
         </div>
     </div>
+@endsection
 
+@section('scripts')
+<script>
+$(document).ready(function() {
+    // Preview del tema en tiempo real
+    $('#theme').change(function() {
+        var selectedTheme = $(this).val();
+        
+        // Remover todas las clases de tema
+        $('body').removeClass('skin-blue skin-blue-light skin-green skin-green-light skin-black skin-red skin-red-light skin-yellow skin-yellow-light skin-purple skin-purple-light');
+        
+        // Agregar la clase del tema seleccionado
+        $('body').addClass(selectedTheme);
+        
+        // Mostrar mensaje temporal
+        var themeName = $(this).find('option:selected').text();
+        var message = $('<div class="alert alert-info alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">' +
+            '<strong>Vista previa:</strong> ' + themeName + '. Guarda los cambios para aplicar permanentemente.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+            '<span aria-hidden="true">&times;</span>' +
+            '</button>' +
+            '</div>');
+        
+        $('body').append(message);
+        
+        // Auto-cerrar después de 3 segundos
+        setTimeout(function() {
+            message.fadeOut(400, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    });
+});
+</script>
 @endsection

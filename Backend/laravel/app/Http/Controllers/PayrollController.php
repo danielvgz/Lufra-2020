@@ -81,13 +81,30 @@ class PayrollController extends Controller
         if ($period->estado === 'cerrado') {
             return response()->json(['message' => 'Periodo ya cerrado.'], 422);
         }
-        DB::transaction(function () use ($period) {
+        
+        $pagosPendientes = 0;
+        
+        DB::transaction(function () use ($period, &$pagosPendientes) {
             Recibo::where('periodo_nomina_id', $period->id)
                 ->whereNull('locked_at')
                 ->update(['estado' => 'aprobado', 'locked_at' => now(), 'updated_at' => now()]);
+            
+            // Contar pagos pendientes
+            $pagosPendientes = DB::table('pagos')
+                ->join('recibos', 'pagos.recibo_id', '=', 'recibos.id')
+                ->where('recibos.periodo_nomina_id', $period->id)
+                ->where('pagos.estado', 'pendiente')
+                ->count();
+            
             $period->estado = 'cerrado';
             $period->save();
         });
+        
+        // Notificar si hay pagos pendientes
+        if ($pagosPendientes > 0) {
+            NotificationHelper::notifyPeriodoCerradoConPagosPendientes($period->id, $pagosPendientes);
+        }
+        
         return response()->json(['message' => 'Recibos aprobados y periodo cerrado.']);
     }
 

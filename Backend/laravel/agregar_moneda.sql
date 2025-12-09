@@ -1,0 +1,1 @@
+ALTER TABLE pagos ADD COLUMN moneda VARCHAR(10);

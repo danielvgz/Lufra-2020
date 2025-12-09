@@ -36,22 +36,33 @@
         <tr><th>Neto a pagar</th><th class="right">{{ number_format($recibo->neto, 2) }}</th></tr>
     </table>
 
-    @if($recibo->pagos->count() > 0)
+    @php
+        $pagosFinalizados = $recibo->pagos->whereIn('estado', ['aceptado', 'rechazado']);
+    @endphp
+    
+    @if($pagosFinalizados->count() > 0)
         <h2>Pagos</h2>
         <table>
-            <tr><th>Fecha</th><th>Método</th><th>Referencia</th><th>Estado</th><th class="right">Importe</th></tr>
-            @foreach($recibo->pagos as $pago)
+            <tr><th>Fecha</th><th>Método</th><th>Moneda</th><th>Referencia</th><th>Estado</th><th class="right">Importe</th></tr>
+            @foreach($pagosFinalizados as $pago)
+                <?php 
+                    $monedaInfo = null;
+                    if ($pago->moneda) {
+                        $monedaInfo = \Illuminate\Support\Facades\DB::table('monedas')->where('codigo', $pago->moneda)->first();
+                    }
+                ?>
                 <tr>
                     <td>{{ $pago->pagado_at ? $pago->pagado_at->format('d/m/Y') : $pago->created_at->format('d/m/Y') }}</td>
                     <td>{{ $pago->metodo }}</td>
+                    <td>{{ $monedaInfo ? $monedaInfo->simbolo . ' ' . $monedaInfo->codigo : ($pago->moneda ?? 'N/A') }}</td>
                     <td>{{ $pago->referencia }}</td>
-                    <td>{{ $pago->estado }}</td>
-                    <td class="right">{{ number_format($pago->importe, 2) }}</td>
+                    <td style="color: {{ $pago->estado === 'aceptado' ? 'green' : 'red' }}; font-weight: bold;">{{ ucfirst($pago->estado) }}</td>
+                    <td class="right">{{ $monedaInfo ? $monedaInfo->simbolo : '' }} {{ number_format($pago->importe, 2) }}</td>
                 </tr>
             @endforeach
             <tr>
-                <th colspan="4" class="right">Total pagado/procesado:</th>
-                <th class="right">{{ number_format($recibo->pagos->sum('importe'), 2) }}</th>
+                <th colspan="5" class="right">Total pagos {{ $pagosFinalizados->where('estado', 'aceptado')->count() > 0 ? 'aceptados' : 'procesados' }}:</th>
+                <th class="right">{{ number_format($pagosFinalizados->sum('importe'), 2) }}</th>
             </tr>
         </table>
     @endif

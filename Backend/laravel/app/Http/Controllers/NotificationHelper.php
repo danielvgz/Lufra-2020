@@ -45,10 +45,10 @@ class NotificationHelper
             Notification::create([
                 'user_id' => $admin->id,
                 'type' => 'recibo_aceptado',
-                'title' => 'Recibo Aceptado',
-                'message' => "El empleado {$nombreEmpleado} ha aceptado su recibo de pago.",
+                'title' => 'Pago Aceptado',
+                'message' => "El empleado {$nombreEmpleado} ha aceptado su pago.",
                 'data' => [
-                    'pago_id' => $pagoId,
+                    'recibo_id' => $pagoId,
                     'empleado_id' => $empleadoId,
                 ],
             ]);
@@ -72,10 +72,10 @@ class NotificationHelper
             Notification::create([
                 'user_id' => $admin->id,
                 'type' => 'recibo_rechazado',
-                'title' => 'Recibo Rechazado',
-                'message' => "El empleado {$nombreEmpleado} ha rechazado su recibo de pago.",
+                'title' => 'Pago Rechazado',
+                'message' => "El empleado {$nombreEmpleado} ha rechazado su pago.",
                 'data' => [
-                    'pago_id' => $pagoId,
+                    'recibo_id' => $pagoId,
                     'empleado_id' => $empleadoId,
                 ],
             ]);
@@ -257,6 +257,46 @@ class NotificationHelper
             }
         } catch (\Exception $e) {
             \Log::error('Error al crear notificación de contrato eliminado: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notificar a los administradores cuando se cierra un período con pagos pendientes
+     */
+    public static function notifyPeriodoCerradoConPagosPendientes($periodoId, $cantidadPendientes)
+    {
+        try {
+            $periodo = DB::table('periodos_nomina')->where('id', $periodoId)->first();
+            if (!$periodo) {
+                return;
+            }
+
+            $admins = DB::table('users')
+                ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->where('roles.name', 'Administrador')
+                ->where('model_has_roles.model_type', 'App\\Models\\User')
+                ->select('users.*')
+                ->get();
+
+            foreach ($admins as $admin) {
+                if (!$admin->id) {
+                    continue;
+                }
+
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'periodo_cerrado_pagos_pendientes',
+                    'title' => 'Período Cerrado con Pagos Pendientes',
+                    'message' => "Se ha cerrado el período {$periodo->codigo} con {$cantidadPendientes} pago(s) pendiente(s) por asignar.",
+                    'data' => [
+                        'periodo_id' => $periodoId,
+                        'cantidad_pendientes' => $cantidadPendientes,
+                    ],
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al crear notificación de período cerrado con pagos pendientes: ' . $e->getMessage());
         }
     }
 

@@ -9,11 +9,22 @@ class DepartamentosSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = now();
-        DB::table('departamentos')->insert([
-            ['codigo' => 'RRHH', 'nombre' => 'Recursos Humanos', 'descripcion' => 'Gestión de personal', 'created_at' => $now, 'updated_at' => $now],
-            ['codigo' => 'FIN', 'nombre' => 'Finanzas', 'descripcion' => 'Contabilidad y pagos', 'created_at' => $now, 'updated_at' => $now],
-            ['codigo' => 'IT', 'nombre' => 'Tecnología', 'descripcion' => 'Sistemas y soporte', 'created_at' => $now, 'updated_at' => $now],
-        ]);
+        $departamentos = [
+            ['codigo' => 'RRHH', 'nombre' => 'Recursos Humanos', 'descripcion' => 'Gestión de personal'],
+            ['codigo' => 'FIN', 'nombre' => 'Finanzas', 'descripcion' => 'Contabilidad y pagos'],
+            ['codigo' => 'IT', 'nombre' => 'Tecnología', 'descripcion' => 'Sistemas y soporte'],
+        ];
+
+        foreach ($departamentos as $depto) {
+            DB::table('departamentos')->updateOrInsert(
+                ['codigo' => $depto['codigo']],
+                [
+                    'nombre' => $depto['nombre'],
+                    'descripcion' => $depto['descripcion'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }

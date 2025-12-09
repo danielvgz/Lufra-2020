@@ -9,22 +9,37 @@ class PermisosSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = now();
-        DB::table('permisos')->insert([
-            ['nombre' => 'ver_dashboard', 'descripcion' => 'Acceder al dashboard', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'gestionar_empleados', 'descripcion' => 'CRUD de empleados', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'gestionar_departamentos', 'descripcion' => 'CRUD de departamentos', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'gestionar_contratos', 'descripcion' => 'CRUD de contratos', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'gestionar_periodos', 'descripcion' => 'CRUD de periodos de nómina', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'gestionar_recibos_pagos', 'descripcion' => 'Emitir recibos y registrar pagos', 'created_at' => $now, 'updated_at' => $now],
-            ['nombre' => 'asignar_roles', 'descripcion' => 'Asignar roles a usuarios', 'created_at' => $now, 'updated_at' => $now],
-        ]);
+        $permisos = [
+            ['nombre' => 'ver_dashboard', 'descripcion' => 'Acceder al dashboard'],
+            ['nombre' => 'gestionar_empleados', 'descripcion' => 'CRUD de empleados'],
+            ['nombre' => 'gestionar_departamentos', 'descripcion' => 'CRUD de departamentos'],
+            ['nombre' => 'gestionar_contratos', 'descripcion' => 'CRUD de contratos'],
+            ['nombre' => 'gestionar_periodos', 'descripcion' => 'CRUD de periodos de nómina'],
+            ['nombre' => 'gestionar_recibos_pagos', 'descripcion' => 'Emitir recibos y registrar pagos'],
+            ['nombre' => 'asignar_roles', 'descripcion' => 'Asignar roles a usuarios'],
+        ];
+
+        foreach ($permisos as $permiso) {
+            DB::table('permisos')->updateOrInsert(
+                ['nombre' => $permiso['nombre']],
+                [
+                    'descripcion' => $permiso['descripcion'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
 
         // asignar todos los permisos al rol administrador
         $adminRolId = DB::table('roles')->where('nombre','administrador')->value('id');
-        $permisos = DB::table('permisos')->pluck('id');
-        foreach ($permisos as $pid) {
-            DB::table('permiso_rol')->updateOrInsert(['rol_id'=>$adminRolId,'permiso_id'=>$pid], []);
+        if ($adminRolId) {
+            $permisos = DB::table('permisos')->pluck('id');
+            foreach ($permisos as $pid) {
+                DB::table('permiso_rol')->updateOrInsert(
+                    ['rol_id' => $adminRolId, 'permiso_id' => $pid],
+                    []
+                );
+            }
         }
     }
 }

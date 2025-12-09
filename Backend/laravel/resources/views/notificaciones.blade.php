@@ -92,14 +92,23 @@
         background-color: #ffebee;
         color: #f44336;
     }
+    .notification-icon.periodo_cerrado_pagos_pendientes {
+        background-color: #fff3e0;
+        color: #ff9800;
+    }
     .badge-new {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
     }
 </style>
+@endsection
 
+@section('scripts')
 <script>
     $(document).ready(function() {
+        console.log('✓ jQuery cargado, iniciando...');
+        console.log('✓ CSRF Token:', $('meta[name="csrf-token"]').attr('content'));
+        
         loadAllNotifications();
 
         function loadAllNotifications() {
@@ -108,11 +117,26 @@
             $.ajax({
                 url: '/notifications/all',
                 method: 'GET',
+                timeout: 10000,
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                beforeSend: function() {
+                    console.log('Iniciando petición AJAX...');
+                },
                 success: function(response) {
-                    console.log('Respuesta recibida:', response);
-                    displayNotifications(response.notifications);
+                    console.log('✓ Respuesta recibida:', response);
+                    if (response && response.notifications) {
+                        displayNotifications(response.notifications);
+                    } else {
+                        console.error('Respuesta sin notificaciones:', response);
+                        displayNotifications([]);
+                    }
                 },
                 error: function(xhr, status, error) {
+                    console.error('✗ Error en AJAX:', status, error);
                     console.error('Error al cargar notificaciones:', {
                         status: xhr.status,
                         statusText: xhr.statusText,
@@ -232,6 +256,7 @@
                 'contrato_creado': 'fas fa-file-contract',
                 'contrato_editado': 'fas fa-pen-square',
                 'contrato_eliminado': 'fas fa-file-excel',
+                'periodo_cerrado_pagos_pendientes': 'fas fa-exclamation-triangle',
             };
             return icons[type] || 'fas fa-bell';
         }
@@ -248,15 +273,33 @@
                 }
             }
             
-            if (data.recibo_id) {
-                return '/recibos_pagos';
+            // Para notificaciones de recibos/pagos, siempre llevar a recibos-pagos
+            // Los empleados verán "Mis pagos" y los admins verán todos los recibos
+            if (data.recibo_id || notif.type.includes('recibo')) {
+                return '/recibos-pagos';
             }
-            if (data.departamento_id || notif.type.includes('departamento')) {
+            
+            // Para notificaciones de período cerrado con pagos pendientes
+            if (notif.type === 'periodo_cerrado_pagos_pendientes' || data.periodo_id) {
+                return '/recibos-pagos';
+            }
+            
+            // Redirigir al detalle específico del elemento para otros tipos
+            if (data.departamento_id) {
+                return '/departamentos?id=' + data.departamento_id;
+            }
+            if (data.contrato_id) {
+                return '/contratos?id=' + data.contrato_id;
+            }
+            
+            // Fallback a las páginas generales si no hay ID específico
+            if (notif.type.includes('departamento')) {
                 return '/departamentos';
             }
-            if (data.contrato_id || notif.type.includes('contrato')) {
+            if (notif.type.includes('contrato')) {
                 return '/contratos';
             }
+            
             return '#';
         }
 

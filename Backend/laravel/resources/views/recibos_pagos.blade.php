@@ -121,7 +121,7 @@
             @if(count($recibosSinPago))
               <div class="table-responsive">
                 <table class="table table-sm">
-                  <thead><tr><th>Recibo</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Método</th><th>Concepto</th><th>Asignar</th></tr></thead>
+                  <thead><tr><th>Recibo</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Moneda</th><th>Método</th><th>Concepto</th><th>Asignar</th></tr></thead>
                   <tbody>
                     @foreach($recibosSinPago as $r)
                       <tr>
@@ -132,32 +132,58 @@
                           <form method="POST" action="{{ route('pagos.asignar') }}" class="form-inline mb-0">
                             @csrf
                             <input type="hidden" name="recibo_id" value="{{ $r->id }}">
-                            <input type="number" step="0.01" min="0" class="form-control form-control-sm mr-2" name="importe" value="{{ $r->neto }}" required>
+                            <input type="number" step="0.01" min="0" class="form-control form-control-sm mr-2" name="importe" value="{{ $r->neto }}" required style="width: 100px;">
                         </td>
                         <td>
-                            <?php $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); ?>
-                            <select name="metodo" class="form-control form-control-sm mr-2" required>
-                              @forelse($metodos as $m)
-                                <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
-                              @empty
-                                <option value="Transferencia">Transferencia</option>
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Pago móvil">Pago móvil</option>
-                              @endforelse
+                            <?php 
+                              $monedas = \Illuminate\Support\Facades\DB::table('monedas')->orderBy('nombre')->limit(100)->get(); 
+                              if ($monedas->isEmpty()) {
+                                $monedas = collect([
+                                  (object)['codigo' => 'VES', 'nombre' => 'Bolívar', 'simbolo' => 'Bs.'],
+                                  (object)['codigo' => 'USD', 'nombre' => 'Dólar', 'simbolo' => '$']
+                                ]);
+                              }
+                            ?>
+                            <select name="moneda" class="form-control form-control-sm mr-2" required style="width: 100px;">
+                              @foreach($monedas as $mon)
+                                <option value="{{ $mon->codigo }}">{{ $mon->simbolo }} {{ $mon->codigo }}</option>
+                              @endforeach
                             </select>
                         </td>
                         <td>
-                            <?php $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); ?>
-                            <select name="concepto" class="form-control form-control-sm mr-2">
+                            <?php 
+                              $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); 
+                              if ($metodos->isEmpty()) {
+                                $metodos = collect([
+                                  (object)['nombre' => 'Transferencia'],
+                                  (object)['nombre' => 'Efectivo'],
+                                  (object)['nombre' => 'Pago móvil']
+                                ]);
+                              }
+                            ?>
+                            <select name="metodo" class="form-control form-control-sm mr-2" required style="width: 120px;">
+                              @foreach($metodos as $m)
+                                <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
+                              @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <?php 
+                              $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); 
+                              if ($conceptos->isEmpty()) {
+                                $conceptos = collect([
+                                  (object)['nombre' => 'Nómina'],
+                                  (object)['nombre' => 'Bono'],
+                                  (object)['nombre' => 'Anticipo'],
+                                  (object)['nombre' => 'Vacaciones']
+                                ]);
+                              }
+                            ?>
+                            <select name="concepto" class="form-control form-control-sm mr-2" style="width: 120px;">
                               <option value="">-- Seleccionar --</option>
-                              @forelse($conceptos as $c)
+                              @foreach($conceptos as $c)
                                 <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
-                              @empty
-                                <option value="Abono de nómina">Abono de nómina</option>
-                                <option value="Deducción">Deducción</option>
-                                <option value="Bono de salario">Bono de salario</option>
-                                <option value="Compensación">Compensación</option>
-                              @endforelse
+                              @endforeach
                             </select>
                         </td>
                         <td>
@@ -176,45 +202,97 @@
         </div>
 
         <div class="card mt-3">
-          <div class="card-header"><h3 class="card-title"><i class="fas fa-hand-holding-usd mr-1"></i> Pago manual (sin recibo)</h3></div>
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-hand-holding-usd mr-1"></i> Pago manual (sin recibo)</h3>
+          </div>
           <div class="card-body">
-            <?php $emps = \Illuminate\Support\Facades\DB::table('empleados')->select('id','nombre','apellido')->orderBy('nombre')->limit(200)->get(); ?>
-            <form method="POST" action="{{ route('pagos.manual') }}" class="form-inline">
+            <?php 
+              $emps = \Illuminate\Support\Facades\DB::table('empleados')->select('id','nombre','apellido')->orderBy('nombre')->limit(200)->get(); 
+              $monedas = \Illuminate\Support\Facades\DB::table('monedas')->orderBy('nombre')->limit(100)->get(); 
+              if ($monedas->isEmpty()) {
+                $monedas = collect([
+                  (object)['codigo' => 'VES', 'nombre' => 'Bolívar', 'simbolo' => 'Bs.'],
+                  (object)['codigo' => 'USD', 'nombre' => 'Dólar', 'simbolo' => '$']
+                ]);
+              }
+              $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); 
+              if ($metodos->isEmpty()) {
+                $metodos = collect([
+                  (object)['nombre' => 'Transferencia'],
+                  (object)['nombre' => 'Efectivo'],
+                  (object)['nombre' => 'Pago móvil']
+                ]);
+              }
+              $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); 
+              if ($conceptos->isEmpty()) {
+                $conceptos = collect([
+                  (object)['nombre' => 'Nómina'],
+                  (object)['nombre' => 'Bono'],
+                  (object)['nombre' => 'Anticipo'],
+                  (object)['nombre' => 'Vacaciones']
+                ]);
+              }
+            ?>
+            <form method="POST" action="{{ route('pagos.manual') }}">
               @csrf
-              <label class="mr-2">Empleado</label>
-              <select name="empleado_id" class="form-control form-control-sm mr-2" required>
-                <option value="">-- Seleccionar --</option>
-                @foreach($emps as $e)
-                  <option value="{{ $e->id }}">{{ $e->nombre }} {{ $e->apellido }}</option>
-                @endforeach
-              </select>
-              <label class="mr-2">Importe</label>
-              <input type="number" step="0.01" min="0" name="importe" class="form-control form-control-sm mr-2" required>
-              <label class="mr-2">Método</label>
-              <?php $metodos = \Illuminate\Support\Facades\DB::table('metodos_pago')->orderBy('nombre')->limit(100)->get(); ?>
-              <select name="metodo" class="form-control form-control-sm mr-2" required>
-                @forelse($metodos as $m)
-                  <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
-                @empty
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Pago móvil">Pago móvil</option>
-                @endforelse
-              </select>
-              <label class="mr-2">Concepto</label>
-              <?php $conceptos = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(100)->get(); ?>
-              <select name="descripcion" class="form-control form-control-sm mr-2">
-                <option value="">-- Seleccionar --</option>
-                @forelse($conceptos as $c)
-                  <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
-                @empty
-                  <option value="Abono de nómina">Abono de nómina</option>
-                  <option value="Deducción">Deducción</option>
-                  <option value="Bono de salario">Bono de salario</option>
-                  <option value="Compensación">Compensación</option>
-                @endforelse
-              </select>
-              <button class="btn btn-sm btn-primary">Crear pago</button>
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="small text-muted">Empleado</label>
+                    <select name="empleado_id" class="form-control form-control-sm" required>
+                      <option value="">-- Seleccionar --</option>
+                      @foreach($emps as $e)
+                        <option value="{{ $e->id }}">{{ $e->nombre }} {{ $e->apellido }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="small text-muted">Importe</label>
+                    <input type="number" step="0.01" min="0" name="importe" class="form-control form-control-sm" placeholder="0.00" required>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="small text-muted">Moneda</label>
+                    <select name="moneda" class="form-control form-control-sm" required>
+                      @foreach($monedas as $mon)
+                        <option value="{{ $mon->codigo }}">{{ $mon->simbolo }} {{ $mon->codigo }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="small text-muted">Método</label>
+                    <select name="metodo" class="form-control form-control-sm" required>
+                      @foreach($metodos as $m)
+                        <option value="{{ $m->nombre }}">{{ $m->nombre }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="small text-muted">Concepto</label>
+                    <select name="descripcion" class="form-control form-control-sm">
+                      <option value="">-- Opcional --</option>
+                      @foreach($conceptos as $c)
+                        <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-group">
+                    <label class="small text-muted d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-sm btn-primary btn-block">
+                      <i class="fas fa-save"></i> Crear
+                    </button>
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
         </div>

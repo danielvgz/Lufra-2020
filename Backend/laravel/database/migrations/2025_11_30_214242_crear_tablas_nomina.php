@@ -142,6 +142,8 @@ return new class extends Migration {
             $table->unsignedBigInteger('recibo_id');
             $table->string('metodo', 64);
             $table->decimal('importe', 14, 2);
+            $table->string('moneda', 10)->nullable();
+            $table->string('estado', 20)->default('pendiente');
             $table->timestamp('pagado_en')->useCurrent();
             $table->string('referencia', 255)->nullable();
             $table->timestamp('created_at')->useCurrent();

@@ -89,6 +89,18 @@ Route::middleware('auth')->group(function () {
             ->where('rol_usuario.user_id', auth()->id())
             ->value('roles.nombre');
         if ($role !== 'administrador') { abort(403); }
+        
+        // Insertar conceptos por defecto si no existen
+        $count = \Illuminate\Support\Facades\DB::table('conceptos_pago')->count();
+        if ($count === 0) {
+            \Illuminate\Support\Facades\DB::table('conceptos_pago')->insert([
+                ['nombre' => 'Nómina', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Bono', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Anticipo', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Vacaciones', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+        
         return view('conceptos');
     })->name('conceptos.view');
     Route::post('/conceptos/crear', function(\Illuminate\Http\Request $request){
@@ -129,6 +141,17 @@ Route::middleware('auth')->group(function () {
             ->where('rol_usuario.user_id', auth()->id())
             ->value('roles.nombre');
         if ($role !== 'administrador') { abort(403); }
+        
+        // Insertar métodos por defecto si no existen
+        $count = \Illuminate\Support\Facades\DB::table('metodos_pago')->count();
+        if ($count === 0) {
+            \Illuminate\Support\Facades\DB::table('metodos_pago')->insert([
+                ['nombre' => 'Transferencia', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Efectivo', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Pago móvil', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+        
         return view('metodos');
     })->name('metodos.view');
     Route::post('/metodos/crear', function(\Illuminate\Http\Request $request){
@@ -169,6 +192,16 @@ Route::middleware('auth')->group(function () {
             ->where('rol_usuario.user_id', auth()->id())
             ->value('roles.nombre');
         if ($role !== 'administrador') { abort(403); }
+        
+        // Insertar monedas por defecto si no existen
+        $count = \Illuminate\Support\Facades\DB::table('monedas')->count();
+        if ($count === 0) {
+            \Illuminate\Support\Facades\DB::table('monedas')->insert([
+                ['nombre' => 'Bolívar', 'codigo' => 'VES', 'simbolo' => 'Bs.', 'created_at' => now(), 'updated_at' => now()],
+                ['nombre' => 'Dólar Estadounidense', 'codigo' => 'USD', 'simbolo' => '$', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+        
         return view('monedas');
     })->name('monedas.view');
     Route::post('/monedas/crear', function(\Illuminate\Http\Request $request){
@@ -925,6 +958,7 @@ Route::middleware('auth')->group(function () {
         $data = $request->validate([
             'recibo_id' => ['required','integer','exists:recibos,id'],
             'importe' => ['required','numeric','min:0'],
+            'moneda' => ['required','string','max:3'],
             'metodo' => ['required','string','max:50'],
             'concepto' => ['nullable','string','max:100'],
         ]);
@@ -936,6 +970,7 @@ Route::middleware('auth')->group(function () {
         if ($exists) {
             \Illuminate\Support\Facades\DB::table('pagos')->where('recibo_id',$data['recibo_id'])->update([
                 'importe' => $data['importe'],
+                'moneda' => $data['moneda'],
                 'metodo' => $data['metodo'],
                 'referencia' => $data['concepto'] ?? null,
                 'estado' => 'pendiente',
@@ -945,6 +980,7 @@ Route::middleware('auth')->group(function () {
             \Illuminate\Support\Facades\DB::table('pagos')->insert([
                 'recibo_id' => $data['recibo_id'],
                 'importe' => $data['importe'],
+                'moneda' => $data['moneda'],
                 'metodo' => $data['metodo'],
                 'referencia' => $data['concepto'] ?? null,
                 'estado' => 'pendiente',
@@ -964,6 +1000,7 @@ Route::middleware('auth')->group(function () {
         $data = $request->validate([
             'empleado_id' => ['required','integer','exists:empleados,id'],
             'importe' => ['required','numeric','min:0'],
+            'moneda' => ['required','string','max:3'],
             'metodo' => ['required','string','max:50'],
         ]);
         // Crear un recibo ad-hoc para vincular el pago manual
@@ -981,6 +1018,7 @@ Route::middleware('auth')->group(function () {
         \Illuminate\Support\Facades\DB::table('pagos')->insert([
             'recibo_id' => $reciboId,
             'importe' => $data['importe'],
+            'moneda' => $data['moneda'],
             'metodo' => $data['metodo'],
             'estado' => 'pendiente',
             'created_at' => now(),

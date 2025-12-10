@@ -87,6 +87,14 @@ class RolController extends Controller
             'rol_id' => ['required','integer'],
             'nombre' => ['required','string','max:100'],
             'descripcion' => ['nullable','string','max:255']
+        ], [
+            'rol_id.required' => 'El ID del rol es obligatorio.',
+            'rol_id.integer' => 'El ID del rol debe ser un número.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'descripcion.string' => 'La descripción debe ser texto.',
+            'descripcion.max' => 'La descripción no debe superar 255 caracteres.',
         ]);
         
         DB::table('roles')->where('id',$data['rol_id'])->update([
@@ -102,6 +110,9 @@ class RolController extends Controller
     {
         $data = $request->validate([
             'rol_id' => ['required','integer'],
+        ], [
+            'rol_id.required' => 'El ID del rol es obligatorio.',
+            'rol_id.integer' => 'El ID del rol debe ser un número.',
         ]);
         
         $rid = (int)$data['rol_id'];

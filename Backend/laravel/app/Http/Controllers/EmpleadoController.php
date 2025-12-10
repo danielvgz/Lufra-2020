@@ -48,6 +48,17 @@ class EmpleadoController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
+        ], [
+            'name.required' => 'El nombre es obligatorio.',
+            'name.string' => 'El nombre debe ser texto.',
+            'name.max' => 'El nombre no debe superar 255 caracteres.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico debe ser válido.',
+            'email.max' => 'El correo electrónico no debe superar 255 caracteres.',
+            'email.unique' => 'El correo electrónico ya existe.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.string' => 'La contraseña debe ser texto.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
         ]);
 
         $userId = DB::table('users')->insertGetId([
@@ -76,6 +87,16 @@ class EmpleadoController extends Controller
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
+        ], [
+            'user_id.required' => 'El ID de usuario es obligatorio.',
+            'user_id.integer' => 'El ID de usuario debe ser un número.',
+            'user_id.exists' => 'El usuario no existe.',
+            'name.required' => 'El nombre es obligatorio.',
+            'name.string' => 'El nombre debe ser texto.',
+            'name.max' => 'El nombre no debe superar 255 caracteres.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico debe ser válido.',
+            'email.max' => 'El correo electrónico no debe superar 255 caracteres.',
         ]);
 
         // Verificar que el email no esté duplicado
@@ -101,6 +122,10 @@ class EmpleadoController extends Controller
     {
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
+        ], [
+            'user_id.required' => 'El ID de usuario es obligatorio.',
+            'user_id.integer' => 'El ID de usuario debe ser un número.',
+            'user_id.exists' => 'El usuario no existe.',
         ]);
 
         DB::table('users')->where('id', $data['user_id'])->delete();
@@ -113,6 +138,14 @@ class EmpleadoController extends Controller
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'user_id.required' => 'El ID de usuario es obligatorio.',
+            'user_id.integer' => 'El ID de usuario debe ser un número.',
+            'user_id.exists' => 'El usuario no existe.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.string' => 'La contraseña debe ser texto.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.confirmed' => 'La confirmación de contraseña no coincide.',
         ]);
 
         DB::table('users')->where('id', $data['user_id'])->update([
@@ -128,6 +161,13 @@ class EmpleadoController extends Controller
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'department_id' => ['required', 'integer', 'exists:departamentos,id'],
+        ], [
+            'user_id.required' => 'El ID de usuario es obligatorio.',
+            'user_id.integer' => 'El ID de usuario debe ser un número.',
+            'user_id.exists' => 'El usuario no existe.',
+            'department_id.required' => 'El departamento es obligatorio.',
+            'department_id.integer' => 'El departamento debe ser un número.',
+            'department_id.exists' => 'El departamento no existe.',
         ]);
 
         // Verificar si el empleado existe

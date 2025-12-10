@@ -88,6 +88,23 @@ class ContratoController extends Controller
             'fecha_fin' => ['nullable', 'date'],
             'salario_base' => ['nullable', 'numeric', 'min:0'],
             'estado' => ['nullable', 'string', 'max:32'],
+        ], [
+            'empleado_id.required' => 'El empleado es obligatorio.',
+            'empleado_id.integer' => 'El empleado debe ser un número.',
+            'empleado_id.exists' => 'El empleado no existe.',
+            'tipo_contrato.string' => 'El tipo de contrato debe ser texto.',
+            'tipo_contrato.max' => 'El tipo de contrato no debe superar 64 caracteres.',
+            'frecuencia_pago.string' => 'La frecuencia de pago debe ser texto.',
+            'frecuencia_pago.max' => 'La frecuencia de pago no debe superar 64 caracteres.',
+            'puesto.string' => 'El puesto debe ser texto.',
+            'puesto.max' => 'El puesto no debe superar 200 caracteres.',
+            'fecha_inicio.date' => 'La fecha de inicio debe ser una fecha válida.',
+            'periodo_prueba_fin.date' => 'El periodo de prueba fin debe ser una fecha válida.',
+            'fecha_fin.date' => 'La fecha fin debe ser una fecha válida.',
+            'salario_base.numeric' => 'El salario base debe ser un número.',
+            'salario_base.min' => 'El salario base debe ser mayor o igual a 0.',
+            'estado.string' => 'El estado debe ser texto.',
+            'estado.max' => 'El estado no debe superar 32 caracteres.',
         ]);
 
         $contratoId = DB::table('contratos')->insertGetId(array_merge($data, [

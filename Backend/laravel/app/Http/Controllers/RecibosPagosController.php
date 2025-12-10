@@ -138,6 +138,23 @@ class RecibosPagosController extends Controller
             'metodo' => ['required', 'string', 'max:100'],
             'referencia' => ['nullable', 'string', 'max:200'],
             'concepto' => ['nullable', 'string', 'max:100'],
+        ], [
+            'recibo_id.required' => 'El recibo es obligatorio.',
+            'recibo_id.integer' => 'El recibo debe ser un número.',
+            'recibo_id.exists' => 'El recibo no existe.',
+            'importe.required' => 'El importe es obligatorio.',
+            'importe.numeric' => 'El importe debe ser un número.',
+            'importe.min' => 'El importe debe ser mayor o igual a 0.',
+            'moneda.required' => 'La moneda es obligatoria.',
+            'moneda.string' => 'La moneda debe ser texto.',
+            'moneda.max' => 'La moneda no debe superar 10 caracteres.',
+            'metodo.required' => 'El método de pago es obligatorio.',
+            'metodo.string' => 'El método de pago debe ser texto.',
+            'metodo.max' => 'El método de pago no debe superar 100 caracteres.',
+            'referencia.string' => 'La referencia debe ser texto.',
+            'referencia.max' => 'La referencia no debe superar 200 caracteres.',
+            'concepto.string' => 'El concepto debe ser texto.',
+            'concepto.max' => 'El concepto no debe superar 100 caracteres.',
         ]);
 
         DB::table('pagos')->insert([
@@ -202,6 +219,19 @@ class RecibosPagosController extends Controller
             'importe' => ['required','numeric','min:0'],
             'moneda' => ['required','string','max:3'],
             'metodo' => ['required','string','max:50'],
+        ], [
+            'empleado_id.required' => 'El empleado es obligatorio.',
+            'empleado_id.integer' => 'El empleado debe ser un número.',
+            'empleado_id.exists' => 'El empleado no existe.',
+            'importe.required' => 'El importe es obligatorio.',
+            'importe.numeric' => 'El importe debe ser un número.',
+            'importe.min' => 'El importe debe ser mayor o igual a 0.',
+            'moneda.required' => 'La moneda es obligatoria.',
+            'moneda.string' => 'La moneda debe ser texto.',
+            'moneda.max' => 'La moneda no debe superar 3 caracteres.',
+            'metodo.required' => 'El método de pago es obligatorio.',
+            'metodo.string' => 'El método de pago debe ser texto.',
+            'metodo.max' => 'El método de pago no debe superar 50 caracteres.',
         ]);
         
         // Crear un recibo ad-hoc para vincular el pago manual

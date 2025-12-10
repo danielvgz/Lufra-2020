@@ -81,6 +81,14 @@ class PermissionController extends Controller
             'permiso_id' => ['required','integer'],
             'nombre' => ['required','string','max:100'],
             'descripcion' => ['nullable','string','max:255']
+        ], [
+            'permiso_id.required' => 'El ID del permiso es obligatorio.',
+            'permiso_id.integer' => 'El ID del permiso debe ser un número.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'descripcion.string' => 'La descripción debe ser texto.',
+            'descripcion.max' => 'La descripción no debe superar 255 caracteres.',
         ]);
         
         DB::table('permisos')->where('id',$data['permiso_id'])->update([
@@ -96,6 +104,9 @@ class PermissionController extends Controller
     {
         $data = $request->validate([
             'permiso_id' => ['required','integer'],
+        ], [
+            'permiso_id.required' => 'El ID del permiso es obligatorio.',
+            'permiso_id.integer' => 'El ID del permiso debe ser un número.',
         ]);
         
         $pid = (int)$data['permiso_id'];

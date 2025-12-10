@@ -47,6 +47,17 @@ class MonedaController extends Controller
             'codigo' => ['required', 'string', 'max:10', 'unique:monedas,codigo'],
             'nombre' => ['required', 'string', 'max:100'],
             'simbolo' => ['required', 'string', 'max:10'],
+        ], [
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 10 caracteres.',
+            'codigo.unique' => 'El código ya existe.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'simbolo.required' => 'El símbolo es obligatorio.',
+            'simbolo.string' => 'El símbolo debe ser texto.',
+            'simbolo.max' => 'El símbolo no debe superar 10 caracteres.',
         ]);
 
         DB::table('monedas')->insert([
@@ -67,6 +78,19 @@ class MonedaController extends Controller
             'codigo' => ['required', 'string', 'max:10'],
             'nombre' => ['required', 'string', 'max:100'],
             'simbolo' => ['required', 'string', 'max:10'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'La moneda no existe.',
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 10 caracteres.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'simbolo.required' => 'El símbolo es obligatorio.',
+            'simbolo.string' => 'El símbolo debe ser texto.',
+            'simbolo.max' => 'El símbolo no debe superar 10 caracteres.',
         ]);
 
         // Verificar que el código no esté duplicado
@@ -93,6 +117,10 @@ class MonedaController extends Controller
     {
         $data = $request->validate([
             'id' => ['required', 'integer', 'exists:monedas,id'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'La moneda no existe.',
         ]);
 
         DB::table('monedas')->where('id', $data['id'])->delete();

@@ -26,6 +26,10 @@ class PayrollController extends Controller
     {
         $data = $request->validate([
             'periodo_id' => ['required','integer','exists:periodos_nomina,id'],
+        ], [
+            'periodo_id.required' => 'El periodo es obligatorio.',
+            'periodo_id.integer' => 'El periodo debe ser un número.',
+            'periodo_id.exists' => 'El periodo no existe.',
         ]);
 
         $period = PayrollPeriod::findOrFail($data['periodo_id']);
@@ -76,6 +80,10 @@ class PayrollController extends Controller
     {
         $data = $request->validate([
             'periodo_id' => ['required','integer','exists:periodos_nomina,id'],
+        ], [
+            'periodo_id.required' => 'El periodo es obligatorio.',
+            'periodo_id.integer' => 'El periodo debe ser un número.',
+            'periodo_id.exists' => 'El periodo no existe.',
         ]);
         $period = PayrollPeriod::findOrFail($data['periodo_id']);
         if ($period->estado === 'cerrado') {
@@ -114,6 +122,15 @@ class PayrollController extends Controller
             'periodo_id' => ['required','integer','exists:periodos_nomina,id'],
             'metodo' => ['required','string','max:50'],
             'referencia' => ['nullable','string','max:100'],
+        ], [
+            'periodo_id.required' => 'El periodo es obligatorio.',
+            'periodo_id.integer' => 'El periodo debe ser un número.',
+            'periodo_id.exists' => 'El periodo no existe.',
+            'metodo.required' => 'El método de pago es obligatorio.',
+            'metodo.string' => 'El método de pago debe ser texto.',
+            'metodo.max' => 'El método de pago no debe superar 50 caracteres.',
+            'referencia.string' => 'La referencia debe ser texto.',
+            'referencia.max' => 'La referencia no debe superar 100 caracteres.',
         ]);
         $period = PayrollPeriod::findOrFail($data['periodo_id']);
         $metodo = $data['metodo'];
@@ -229,6 +246,11 @@ class PayrollController extends Controller
         $data = $request->validate([
             'frecuencia' => ['required', 'in:semanal,quincenal,mensual'],
             'fecha_inicio' => ['required', 'date'],
+        ], [
+            'frecuencia.required' => 'La frecuencia es obligatoria.',
+            'frecuencia.in' => 'La frecuencia debe ser semanal, quincenal o mensual.',
+            'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
+            'fecha_inicio.date' => 'La fecha de inicio debe ser una fecha válida.',
         ]);
 
         $inicio = \Carbon\Carbon::parse($data['fecha_inicio']);
@@ -271,6 +293,10 @@ class PayrollController extends Controller
     {
         $data = $request->validate([
             'periodo_id' => ['required', 'integer', 'exists:periodos_nomina,id'],
+        ], [
+            'periodo_id.required' => 'El periodo es obligatorio.',
+            'periodo_id.integer' => 'El periodo debe ser un número.',
+            'periodo_id.exists' => 'El periodo no existe.',
         ]);
 
         $pagosPendientes = DB::table('pagos as p')

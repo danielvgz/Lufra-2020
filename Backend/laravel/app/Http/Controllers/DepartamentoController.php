@@ -48,6 +48,15 @@ class DepartamentoController extends Controller
             'codigo' => ['required', 'string', 'max:10', 'unique:departamentos,codigo'],
             'nombre' => ['required', 'string', 'max:100'],
             'descripcion' => ['nullable', 'string'],
+        ], [
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 10 caracteres.',
+            'codigo.unique' => 'El código ya existe.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'descripcion.string' => 'La descripción debe ser texto.',
         ]);
 
         $id = DB::table('departamentos')->insertGetId([
@@ -71,6 +80,17 @@ class DepartamentoController extends Controller
             'codigo' => ['required', 'string', 'max:10'],
             'nombre' => ['required', 'string', 'max:100'],
             'descripcion' => ['nullable', 'string'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'El departamento no existe.',
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 10 caracteres.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'descripcion.string' => 'La descripción debe ser texto.',
         ]);
 
         // Verificar que el código no esté duplicado
@@ -100,6 +120,10 @@ class DepartamentoController extends Controller
     {
         $data = $request->validate([
             'id' => ['required', 'integer', 'exists:departamentos,id'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'El departamento no existe.',
         ]);
 
         // Obtener nombre antes de eliminar

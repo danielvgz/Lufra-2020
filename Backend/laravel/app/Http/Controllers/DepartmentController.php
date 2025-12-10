@@ -33,6 +33,15 @@ class DepartmentController extends Controller
             'nombre' => ['required', 'string', 'max:255'],
             'codigo' => ['required', 'string', 'max:50', Rule::unique('departamentos', 'codigo')],
             'descripcion' => ['nullable', 'string'],
+        ], [
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 255 caracteres.',
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 50 caracteres.',
+            'codigo.unique' => 'El código ya existe.',
+            'descripcion.string' => 'La descripción debe ser texto.',
         ]);
 
         $department = Department::create($data);
@@ -51,6 +60,15 @@ class DepartmentController extends Controller
             'nombre' => ['sometimes', 'required', 'string', 'max:255'],
             'codigo' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('departamentos', 'codigo')->ignore($department->id)],
             'descripcion' => ['nullable', 'string'],
+        ], [
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 255 caracteres.',
+            'codigo.required' => 'El código es obligatorio.',
+            'codigo.string' => 'El código debe ser texto.',
+            'codigo.max' => 'El código no debe superar 50 caracteres.',
+            'codigo.unique' => 'El código ya existe.',
+            'descripcion.string' => 'La descripción debe ser texto.',
         ]);
 
         $department->update($data);

@@ -27,6 +27,18 @@ class PerfilController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'current_password' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ], [
+            'name.required' => 'El nombre es obligatorio.',
+            'name.string' => 'El nombre debe ser texto.',
+            'name.max' => 'El nombre no debe superar 255 caracteres.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico debe ser válido.',
+            'email.max' => 'El correo electrónico no debe superar 255 caracteres.',
+            'email.unique' => 'El correo electrónico ya existe.',
+            'current_password.string' => 'La contraseña actual debe ser texto.',
+            'password.string' => 'La contraseña debe ser texto.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.confirmed' => 'La confirmación de contraseña no coincide.',
         ]);
 
         $update = [

@@ -46,6 +46,11 @@ class ConceptoPagoController extends Controller
     {
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:100', 'unique:conceptos_pago,nombre'],
+        ], [
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
+            'nombre.unique' => 'El nombre ya existe.',
         ]);
 
         DB::table('conceptos_pago')->insert([
@@ -62,6 +67,13 @@ class ConceptoPagoController extends Controller
         $data = $request->validate([
             'id' => ['required', 'integer', 'exists:conceptos_pago,id'],
             'nombre' => ['required', 'string', 'max:100'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'El concepto no existe.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.string' => 'El nombre debe ser texto.',
+            'nombre.max' => 'El nombre no debe superar 100 caracteres.',
         ]);
 
         // Verificar que el nombre no esté duplicado
@@ -86,6 +98,10 @@ class ConceptoPagoController extends Controller
     {
         $data = $request->validate([
             'id' => ['required', 'integer', 'exists:conceptos_pago,id'],
+        ], [
+            'id.required' => 'El ID es obligatorio.',
+            'id.integer' => 'El ID debe ser un número.',
+            'id.exists' => 'El concepto no existe.',
         ]);
 
         DB::table('conceptos_pago')->where('id', $data['id'])->delete();

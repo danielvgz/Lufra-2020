@@ -7,7 +7,7 @@
       <a href="{{ route('recibos_pagos') }}" class="btn btn-sm btn-outline-secondary">Volver</a>
     </div>
     <div class="card-body">
-      <?php $items = \Illuminate\Support\Facades\DB::table('conceptos_pago')->orderBy('nombre')->limit(200)->get(); ?>
+
       <form method="POST" action="{{ route('conceptos.crear') }}" class="form-inline mb-3">@csrf
         <input type="text" name="nombre" class="form-control form-control-sm mr-2" placeholder="Nuevo concepto" required>
         <button class="btn btn-sm btn-primary">Agregar</button>
@@ -36,6 +36,9 @@
             @endforeach
             </tbody>
           </table>
+        </div>
+        <div class="mt-3">
+          {{ $items->links() }}
         </div>
       @else
         <p>No hay conceptos.</p>

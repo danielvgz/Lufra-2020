@@ -222,4 +222,72 @@ class PayrollController extends Controller
             ->header('Content-Type', 'text/plain')
             ->header('Content-Disposition', 'attachment; filename="transfer_'.($period->codigo).'.csv"');
     }
+
+    // Métodos adicionales para web routes
+    public function createPeriod(Request $request)
+    {
+        $data = $request->validate([
+            'frecuencia' => ['required', 'in:semanal,quincenal,mensual'],
+            'fecha_inicio' => ['required', 'date'],
+        ]);
+
+        $inicio = \Carbon\Carbon::parse($data['fecha_inicio']);
+        
+        switch ($data['frecuencia']) {
+            case 'semanal':
+                $fin = $inicio->copy()->addDays(6);
+                break;
+            case 'quincenal':
+                $fin = $inicio->copy()->addDays(14);
+                break;
+            case 'mensual':
+                $fin = $inicio->copy()->endOfMonth();
+                break;
+        }
+
+        $codigo = $inicio->format('Y-m');
+        if ($data['frecuencia'] !== 'mensual') {
+            $codigo .= '-' . $inicio->format('d');
+        }
+
+        $exists = DB::table('periodos_nomina')->where('codigo', $codigo)->exists();
+        if ($exists) {
+            return back()->withErrors(['codigo' => 'Ya existe un período con ese código'])->withInput();
+        }
+
+        DB::table('periodos_nomina')->insert([
+            'codigo' => $codigo,
+            'fecha_inicio' => $inicio->toDateString(),
+            'fecha_fin' => $fin->toDateString(),
+            'estado' => 'abierto',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('nominas.index')->with('success', 'Período de nómina creado correctamente');
+    }
+
+    public function closePeriod(Request $request)
+    {
+        $data = $request->validate([
+            'periodo_id' => ['required', 'integer', 'exists:periodos_nomina,id'],
+        ]);
+
+        $pagosPendientes = DB::table('pagos as p')
+            ->join('recibos as r', 'r.id', '=', 'p.recibo_id')
+            ->where('r.periodo_nomina_id', $data['periodo_id'])
+            ->where('p.estado', 'pendiente')
+            ->count();
+
+        DB::table('periodos_nomina')->where('id', $data['periodo_id'])->update([
+            'estado' => 'cerrado',
+            'updated_at' => now(),
+        ]);
+
+        if ($pagosPendientes > 0) {
+            NotificationHelper::notifyPeriodoCerradoConPagosPendientes($data['periodo_id'], $pagosPendientes);
+        }
+
+        return redirect()->route('nominas.index')->with('success', 'Período cerrado correctamente');
+    }
 }

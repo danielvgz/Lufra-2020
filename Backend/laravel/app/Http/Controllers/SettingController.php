@@ -38,6 +38,10 @@ class SettingController extends Controller
         
         $data = $request->except('_token');
         $data['image'] = $profileImage;
+        
+        // Manejar checkbox show_notifications (si no está marcado, no viene en el request)
+        $data['show_notifications'] = $request->has('show_notifications') ? '1' : '0';
+        
         foreach ($data as $key => $value) {
             $setting = Settings::firstOrCreate(['key' => $key]);
             $setting->value = $value;

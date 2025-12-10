@@ -14,10 +14,50 @@
         ?>
         @if($esEmpleado)
         <div class="card">
-          <div class="card-header"><h3 class="card-title"><i class="fas fa-file-invoice-dollar mr-1"></i> Mis pagos</h3></div>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0"><i class="fas fa-file-invoice-dollar mr-1"></i> Mis pagos</h3>
+          </div>
           <div class="card-body">
-            <?php $pagos = \Illuminate\Support\Facades\DB::table('pagos as p')->join('recibos as r','r.id','=','p.recibo_id')->join('empleados as e','e.id','=','r.empleado_id')->where('e.user_id', auth()->id())->select('p.id','p.importe','p.metodo','p.estado','p.referencia','r.id as recibo_id')->orderByDesc('p.id')->limit(50)->get(); ?>
-            @if(count($pagos))
+            <!-- Caja de búsqueda para empleados -->
+            <form method="GET" action="{{ route('recibos_pagos') }}" class="mb-3">
+              <div class="input-group">
+                <input type="text" name="search_pagos" class="form-control" 
+                       placeholder="Buscar por importe, método, estado o referencia..." 
+                       value="{{ request('search_pagos') }}">
+                <div class="input-group-append">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Buscar
+                  </button>
+                  @if(request('search_pagos'))
+                    <a href="{{ route('recibos_pagos') }}" class="btn btn-secondary">
+                      <i class="fas fa-times"></i> Limpiar
+                    </a>
+                  @endif
+                </div>
+              </div>
+            </form>
+
+            <?php 
+            $searchPagos = request('search_pagos');
+            $queryPagos = \Illuminate\Support\Facades\DB::table('pagos as p')
+              ->join('recibos as r','r.id','=','p.recibo_id')
+              ->join('empleados as e','e.id','=','r.empleado_id')
+              ->where('e.user_id', auth()->id())
+              ->select('p.id','p.importe','p.metodo','p.estado','p.referencia','r.id as recibo_id','p.moneda');
+            
+            if ($searchPagos) {
+              $queryPagos->where(function($q) use ($searchPagos) {
+                $q->where('p.importe', 'like', "%{$searchPagos}%")
+                  ->orWhere('p.metodo', 'like', "%{$searchPagos}%")
+                  ->orWhere('p.estado', 'like', "%{$searchPagos}%")
+                  ->orWhere('p.referencia', 'like', "%{$searchPagos}%")
+                  ->orWhere('p.moneda', 'like', "%{$searchPagos}%");
+              });
+            }
+            
+            $pagos = $queryPagos->orderByDesc('p.id')->paginate(20, ['*'], 'pagos_page');
+            ?>
+            @if($pagos->count())
               <div class="table-responsive">
                 <table class="table table-sm">
                   <thead><tr><th>Importe</th><th>Método</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -41,17 +81,63 @@
                   </tbody>
                 </table>
               </div>
+              <div class="mt-3">
+                {{ $pagos->appends(['search_pagos' => request('search_pagos')])->links('pagination::bootstrap-4') }}
+              </div>
             @else
-              <p>No hay pagos asignados.</p>
+              @if(request('search_pagos'))
+                <div class="alert alert-info">
+                  No se encontraron pagos que coincidan con "{{ request('search_pagos') }}".
+                  <a href="{{ route('recibos_pagos') }}" class="alert-link">Ver todos</a>
+                </div>
+              @else
+                <p>No hay pagos asignados.</p>
+              @endif
             @endif
           </div>
         </div>
         @else
         <div class="card">
-          <div class="card-header"><h3 class="card-title"><i class="fas fa-file-invoice-dollar mr-1"></i> Acciones</h3></div>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0"><i class="fas fa-file-invoice-dollar mr-1"></i> Períodos de nómina</h3>
+          </div>
           <div class="card-body">
-            <?php $periodos = \Illuminate\Support\Facades\DB::table('periodos_nomina')->orderByDesc('fecha_inicio')->limit(24)->get(); ?>
-            @if(count($periodos))
+            <!-- Caja de búsqueda de períodos -->
+            <form method="GET" action="{{ route('recibos_pagos') }}" class="mb-3">
+              <input type="hidden" name="q" value="{{ request('q') }}">
+              <div class="input-group">
+                <input type="text" name="search_periodos" class="form-control" 
+                       placeholder="Buscar período por código, fecha o estado..." 
+                       value="{{ request('search_periodos') }}">
+                <div class="input-group-append">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Buscar
+                  </button>
+                  @if(request('search_periodos'))
+                    <a href="{{ route('recibos_pagos') }}?q={{ request('q') }}" class="btn btn-secondary">
+                      <i class="fas fa-times"></i> Limpiar
+                    </a>
+                  @endif
+                </div>
+              </div>
+            </form>
+
+            <?php 
+            $searchPeriodos = request('search_periodos');
+            $queryPeriodos = \Illuminate\Support\Facades\DB::table('periodos_nomina');
+            
+            if ($searchPeriodos) {
+              $queryPeriodos->where(function($q) use ($searchPeriodos) {
+                $q->where('codigo', 'like', "%{$searchPeriodos}%")
+                  ->orWhere('fecha_inicio', 'like', "%{$searchPeriodos}%")
+                  ->orWhere('fecha_fin', 'like', "%{$searchPeriodos}%")
+                  ->orWhere('estado', 'like', "%{$searchPeriodos}%");
+              });
+            }
+            
+            $periodos = $queryPeriodos->orderByDesc('fecha_inicio')->paginate(15, ['*'], 'periodos_page');
+            ?>
+            @if($periodos->count())
               <div class="table-responsive">
                 <table class="table table-sm">
                   <thead><tr><th>Código</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -72,8 +158,18 @@
                   </tbody>
                 </table>
               </div>
+              <div class="mt-3">
+                {{ $periodos->appends(['q' => request('q'), 'search_periodos' => request('search_periodos')])->links('pagination::bootstrap-4') }}
+              </div>
             @else
-              <p>No hay periodos de nómina.</p>
+              @if(request('search_periodos'))
+                <div class="alert alert-info">
+                  No se encontraron períodos que coincidan con "{{ request('search_periodos') }}".
+                  <a href="{{ route('recibos_pagos') }}" class="alert-link">Ver todos</a>
+                </div>
+              @else
+                <p>No hay periodos de nómina.</p>
+              @endif
             @endif
           </div>
         </div>
@@ -83,8 +179,16 @@
             <h3 class="card-title mb-0"><i class="fas fa-money-check-alt mr-1"></i> Pagos por asignar (recibos sin pago)</h3>
             <div class="d-flex align-items-center">
               <form method="GET" action="{{ route('recibos_pagos') }}" class="form-inline mr-2">
+                <input type="hidden" name="search_periodos" value="{{ request('search_periodos') }}">
                 <input type="text" name="q" value="{{ request('q','') }}" class="form-control form-control-sm mr-2" placeholder="Buscar empleado o #recibo">
-                <button class="btn btn-sm btn-outline-secondary">Buscar</button>
+                <button class="btn btn-sm btn-primary">
+                  <i class="fas fa-search"></i> Buscar
+                </button>
+                @if(request('q'))
+                  <a href="{{ route('recibos_pagos') }}?search_periodos={{ request('search_periodos') }}" class="btn btn-sm btn-secondary ml-2">
+                    <i class="fas fa-times"></i>
+                  </a>
+                @endif
               </form>
               <a href="{{ route('conceptos.view') }}" class="btn btn-sm btn-outline-secondary mr-2">Conceptos</a>
               <a href="{{ route('metodos.view') }}" class="btn btn-sm btn-outline-secondary mr-2">Métodos</a>
@@ -116,7 +220,7 @@
                   if (is_numeric($q)) { $w->orWhere('r.id','=',$q); }
                 });
               }
-              $recibosSinPago = $recibosQuery->select('r.id','e.nombre','e.apellido','r.neto')->orderByDesc('r.id')->limit(30)->get();
+              $recibosSinPago = $recibosQuery->select('r.id','e.nombre','e.apellido','r.neto')->orderByDesc('r.id')->paginate(20, ['*'], 'recibos_page');
             ?>
             @if(count($recibosSinPago))
               <div class="table-responsive">
@@ -195,8 +299,18 @@
                   </tbody>
                 </table>
               </div>
+              <div class="mt-3">
+                {{ $recibosSinPago->appends(['q' => request('q'), 'search_periodos' => request('search_periodos')])->links('pagination::bootstrap-4') }}
+              </div>
             @else
-              <p>No hay recibos pendientes de pago.</p>
+              @if(request('q'))
+                <div class="alert alert-info">
+                  No se encontraron recibos que coincidan con "{{ request('q') }}".
+                  <a href="{{ route('recibos_pagos') }}?search_periodos={{ request('search_periodos') }}" class="alert-link">Ver todos</a>
+                </div>
+              @else
+                <p>No hay recibos pendientes de pago.</p>
+              @endif
             @endif
           </div>
         </div>

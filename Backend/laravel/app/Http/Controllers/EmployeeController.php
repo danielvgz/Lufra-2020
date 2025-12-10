@@ -40,7 +40,7 @@ class EmployeeController extends Controller
             });
         }
 
-        return response()->json($query->orderBy('apellido')->orderBy('nombre')->paginate(50));
+        return response()->json($query->orderBy('apellido')->orderBy('nombre')->paginate(1));
     }
 
     public function store(Request $request): JsonResponse

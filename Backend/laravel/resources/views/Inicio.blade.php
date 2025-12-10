@@ -1,24 +1,5 @@
 @extends('layouts')
 @section('content')
-<?php
-use Illuminate\Support\Facades\DB;
-$empleados = DB::table('empleados')->count();
-$departamentos = DB::table('departamentos')->count();
-$contratos = DB::table('contratos')->count();
-$periodos = DB::table('periodos_nomina')->count();
-$recibos = DB::table('recibos')->count();
-$pagos = DB::table('pagos')->count();
-$esEmpleado = false;
-if (auth()->check()) {
-    $esEmpleado = DB::table('rol_usuario as ru')
-        ->join('roles as r','r.id','=','ru.rol_id')
-        ->where('ru.user_id', auth()->id())
-        ->where('r.nombre','empleado')
-        ->exists();
-}
-?>
-
- 
             <div class="container-fluid">
 @unless($esEmpleado)
                 <div class="row">
@@ -86,9 +67,6 @@ if (auth()->check()) {
                             </div>
                             <div class="card-body">
                                 <p class="mb-2">Último periodo de nómina:</p>
-                                <?php
-                                $ultimoPeriodo = DB::table('periodos_nomina')->orderByDesc('fecha_fin')->first();
-                                ?>
                                 @if($ultimoPeriodo)
                                     <p><strong>{{ $ultimoPeriodo->codigo }}</strong> ({{ $ultimoPeriodo->fecha_inicio }} a {{ $ultimoPeriodo->fecha_fin }}) - Estado: {{ $ultimoPeriodo->estado }}</p>
                                 @else
@@ -107,7 +85,6 @@ if (auth()->check()) {
                                 <h3 class="card-title"><i class="fas fa-sitemap mr-1"></i> Departamentos</h3>
                             </div>
                             <div class="card-body">
-                                <?php $deps = DB::table('departamentos')->select('codigo','nombre')->limit(10)->get(); ?>
                                 @if(count($deps))
                                     <ul class="list-unstyled mb-0">
                                         @foreach($deps as $d)
@@ -130,7 +107,6 @@ if (auth()->check()) {
                                 <h3 class="card-title"><i class="fas fa-file-signature mr-1"></i> Contratos</h3>
                             </div>
                             <div class="card-body">
-                                <?php $contratosList = DB::table('contratos')->select('id','tipo_contrato','frecuencia_pago','salario_base')->limit(10)->get(); ?>
                                 @if(count($contratosList))
                                     <div class="table-responsive">
                                         <table class="table table-sm">
@@ -163,7 +139,6 @@ if (auth()->check()) {
                                 <h3 class="card-title"><i class="fas fa-calendar-alt mr-1"></i> Periodos de nómina</h3>
                             </div>
                             <div class="card-body">
-                                <?php $periodosList = DB::table('periodos_nomina')->select('codigo','fecha_inicio','fecha_fin','estado')->orderByDesc('fecha_inicio')->limit(10)->get(); ?>
                                 @if(count($periodosList))
                                     <div class="table-responsive">
                                         <table class="table table-sm">
@@ -198,25 +173,6 @@ if (auth()->check()) {
                                 <h3 class="card-title"><i class="fas fa-file-invoice-dollar mr-1"></i> Recibos y Pagos</h3>
                             </div>
                             <div class="card-body">
-                                <?php
-                                    if ($esEmpleado) {
-                                        $recibosList = DB::table('recibos as r')
-                                            ->join('empleados as e','e.id','=','r.empleado_id')
-                                            ->where('e.user_id', auth()->id())
-                                            ->select('r.neto','r.estado')
-                                            ->orderByDesc('r.id')->limit(10)->get();
-                                        $pagosList = DB::table('pagos as p')
-                                            ->join('recibos as r','r.id','=','p.recibo_id')
-                                            ->join('empleados as e','e.id','=','r.empleado_id')
-                                            ->where('e.user_id', auth()->id())
-                                            ->whereIn('p.estado', ['aceptado','rechazado'])
-                                            ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id','p.respondido_en','p.updated_at','p.created_at')
-                                            ->orderByDesc('p.id')->limit(10)->get();
-                                    } else {
-                                        $recibosList = DB::table('recibos')->select('id','empleado_id','neto','estado')->orderByDesc('id')->limit(10)->get();
-                                        $pagosList = DB::table('pagos')->select('id','recibo_id','importe','metodo')->orderByDesc('id')->limit(10)->get();
-                                    }
-                                ?>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <h6>Recibos recientes</h6>

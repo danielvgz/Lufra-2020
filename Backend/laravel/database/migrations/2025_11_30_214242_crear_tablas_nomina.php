@@ -94,10 +94,13 @@ return new class extends Migration {
             $table->decimal('bruto', 14, 2)->default(0.00);
             $table->decimal('total_percepciones', 14, 2)->default(0.00);
             $table->decimal('total_deducciones', 14, 2)->default(0.00);
+            $table->decimal('deducciones', 14, 2)->default(0.00);
+            $table->json('detalle_deducciones')->nullable();
             $table->decimal('neto', 14, 2)->default(0.00);
             $table->string('estado', 32)->default('borrador');
             $table->timestamp('emitido_en')->nullable();
             $table->timestamp('pagado_en')->nullable();
+            $table->timestamp('locked_at')->nullable();
             $table->timestamps();
             $table->foreign('empleado_id')->references('id')->on('empleados')->cascadeOnDelete();
             $table->foreign('contrato_id')->references('id')->on('contratos')->nullOnDelete();

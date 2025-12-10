@@ -124,6 +124,60 @@
     .navbar-nav .nav-item .dropdown-menu {
       margin-top: 0.5rem;
     }
+    
+    /* Estilos para paginación */
+    .pagination {
+      margin-bottom: 0;
+    }
+    .pagination .page-link {
+      color: #3c8dbc;
+      border-color: #dee2e6;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: #3c8dbc;
+      border-color: #3c8dbc;
+      color: #fff;
+    }
+    .pagination .page-link:hover {
+      color: #2c6e9c;
+      background-color: #e9ecef;
+      border-color: #dee2e6;
+    }
+    .pagination .page-item.disabled .page-link {
+      color: #6c757d;
+      background-color: #fff;
+      border-color: #dee2e6;
+    }
+    
+    /* Adaptar color de paginación según tema */
+    .skin-green .pagination .page-link {
+      color: #00a65a;
+    }
+    .skin-green .pagination .page-item.active .page-link {
+      background-color: #00a65a;
+      border-color: #00a65a;
+    }
+    .skin-red .pagination .page-link {
+      color: #dd4b39;
+    }
+    .skin-red .pagination .page-item.active .page-link {
+      background-color: #dd4b39;
+      border-color: #dd4b39;
+    }
+    .skin-yellow .pagination .page-link {
+      color: #f39c12;
+    }
+    .skin-yellow .pagination .page-item.active .page-link {
+      background-color: #f39c12;
+      border-color: #f39c12;
+    }
+    .skin-purple .pagination .page-link {
+      color: #605ca8;
+    }
+    .skin-purple .pagination .page-item.active .page-link {
+      background-color: #605ca8;
+      border-color: #605ca8;
+    }
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100 {{ config('settings.theme', 'skin-blue') }}">
@@ -132,6 +186,7 @@
       <a class="navbar-brand" href="{{ route('home') }}">Gestión Nóminas</a>
       <ul class="navbar-nav ml-auto">
         @auth
+          @if(config('settings.show_notifications', '1') == '1')
           <li class="nav-item dropdown" id="notification-dropdown">
             <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-bell"></i>
@@ -152,6 +207,7 @@
               </a>
             </div>
           </li>
+          @endif
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-user-circle mr-1"></i>{{ auth()->user()->name }}
@@ -177,37 +233,48 @@
   <div class="row">
     <aside class="col-md-3 col-lg-2 bg-light border-right pt-3">
       <div class="list-group list-group-flush">
-        <a class="list-group-item list-group-item-action" href="{{ route('home') }}">Inicio</a>
-        @php
-          $role = auth()->user()->role ?? null;
-          if (!$role && auth()->check()) {
-            $role = \Illuminate\Support\Facades\DB::table('rol_usuario')
-              ->join('roles','roles.id','=','rol_usuario.rol_id')
-              ->where('rol_usuario.user_id', auth()->id())
-              ->value('roles.nombre');
-          }
-        @endphp
+        <a class="list-group-item list-group-item-action" href="{{ route('home') }}">
+          <i class="fas fa-home mr-2"></i>Inicio
+        </a>
         @if($role === 'administrador')
           <a class="list-group-item list-group-item-action" href="{{ route('notificaciones.view') }}">
             <i class="fas fa-bell mr-2"></i>Notificaciones
           </a>
-          <a class="list-group-item list-group-item-action" href="{{ route('departamentos.view') }}">Departamentos</a>
-          <a class="list-group-item list-group-item-action" href="{{ route('empleados.index') }}">Empleados</a>
-          <a class="list-group-item list-group-item-action" href="{{ route('contratos.index') }}">Contratos</a>
-          <a class="list-group-item list-group-item-action" href="{{ route('nominas.index') }}">Períodos de Nómina</a>
-          <a class="list-group-item list-group-item-action" href="{{ route('recibos_pagos') }}">Recibos y Pagos</a>
+          <a class="list-group-item list-group-item-action" href="{{ route('departamentos.view') }}">
+            <i class="fas fa-sitemap mr-2"></i>Departamentos
+          </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('empleados.index') }}">
+            <i class="fas fa-users mr-2"></i>Empleados
+          </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('contratos.index') }}">
+            <i class="fas fa-file-contract mr-2"></i>Contratos
+          </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('nominas.index') }}">
+            <i class="fas fa-calendar-alt mr-2"></i>Períodos de Nómina
+          </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('recibos_pagos') }}">
+            <i class="fas fa-money-bill-wave mr-2"></i>Recibos y Pagos
+          </a>
           @if(auth()->check() && auth()->user()->puede('asignar_roles'))
-            <a class="list-group-item list-group-item-action" href="{{ url('/roles') }}">Roles</a>
+            <a class="list-group-item list-group-item-action" href="{{ url('/roles') }}">
+              <i class="fas fa-user-shield mr-2"></i>Roles
+            </a>
           @endif
           @if(auth()->check() && auth()->user()->puede('asignar_roles'))
-            <a class="list-group-item list-group-item-action" href="{{ url('/permissions') }}">Permisos</a>
+            <a class="list-group-item list-group-item-action" href="{{ url('/permissions') }}">
+              <i class="fas fa-key mr-2"></i>Permisos
+            </a>
           @endif
-          <a class="list-group-item list-group-item-action" href="{{ url('/configuracion') }}">Configuración</a>
+          <a class="list-group-item list-group-item-action" href="{{ url('/configuracion') }}">
+            <i class="fas fa-cog mr-2"></i>Configuración
+          </a>
         @elseif($role === 'empleado')
           <a class="list-group-item list-group-item-action" href="{{ route('notificaciones.view') }}">
             <i class="fas fa-bell mr-2"></i>Notificaciones
           </a>
-          <a class="list-group-item list-group-item-action" href="{{ route('recibos_pagos') }}">Recibos y Pagos</a>
+          <a class="list-group-item list-group-item-action" href="{{ route('recibos_pagos') }}">
+            <i class="fas fa-money-bill-wave mr-2"></i>Recibos y Pagos
+          </a>
         @endif
       </div>
     </aside>
@@ -263,6 +330,7 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <script>
   @auth
+  @if(config('settings.show_notifications', '1') == '1')
   $(document).ready(function() {
     // Función para cargar notificaciones
     function loadNotifications() {
@@ -345,15 +413,22 @@
     
     function getNotificationUrl(notif) {
       const data = notif.data || {};
-      if (data.recibo_id) {
-        return '/recibos_pagos';
+      
+      // Notificaciones de recibos y pagos
+      if (data.recibo_id || data.pago_id || notif.type.includes('recibo')) {
+        return '/recibos-pagos';
       }
+      
+      // Notificaciones de departamentos
       if (data.departamento_id || notif.type.includes('departamento')) {
         return '/departamentos';
       }
+      
+      // Notificaciones de contratos
       if (data.contrato_id || notif.type.includes('contrato')) {
         return '/contratos';
       }
+      
       return '#';
     }
     
@@ -365,7 +440,15 @@
       if (diff < 60) return 'Hace un momento';
       if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
       if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
-      return date.toLocaleDateString();
+      
+      // Formato: DD/MM/YYYY HH:MM
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
     
     // Función global para marcar como leída y redirigir
@@ -422,6 +505,7 @@
     // Actualizar cada 30 segundos
     setInterval(loadNotifications, 30000);
   });
+  @endif
   @endauth
 </script>
 

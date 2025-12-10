@@ -19,9 +19,30 @@
           </div>
           <div class="col-md-7">
             <div class="card">
-              <div class="card-header"><h3 class="card-title"><i class="fas fa-list mr-1"></i> Lista de usuarios</h3></div>
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0"><i class="fas fa-list mr-1"></i> Lista de usuarios</h3>
+              </div>
               <div class="card-body">
-                <?php use Illuminate\Support\Facades\DB; $usuarios = DB::table('users as u')->join('rol_usuario as ru','ru.user_id','=','u.id')->join('roles as r','r.id','=','ru.rol_id')->where('r.nombre','empleado')->select('u.id','u.name','u.email')->orderBy('u.id','desc')->limit(100)->get(); ?>
+                <!-- Caja de búsqueda -->
+                <form method="GET" action="{{ route('empleados.index') }}" class="mb-3">
+                  <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Buscar por nombre, correo o ID..." 
+                           value="{{ request('search') }}">
+                    <div class="input-group-append">
+                      <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> Buscar
+                      </button>
+                      @if(request('search'))
+                        <a href="{{ route('empleados.index') }}" class="btn btn-secondary">
+                          <i class="fas fa-times"></i> Limpiar
+                        </a>
+                      @endif
+                    </div>
+                  </div>
+                </form>
+
+                @if($usuarios->count())
                 <div class="table-responsive">
                   <table class="table table-sm">
                     <thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Acciones</th></tr></thead>
@@ -77,6 +98,19 @@
                     </tbody>
                   </table>
                 </div>
+                <div class="mt-3">
+                  {{ $usuarios->appends(['search' => request('search')])->links('pagination::bootstrap-4') }}
+                </div>
+                @else
+                  @if(request('search'))
+                    <div class="alert alert-info">
+                      No se encontraron usuarios que coincidan con "{{ request('search') }}".
+                      <a href="{{ route('empleados.index') }}" class="alert-link">Ver todos</a>
+                    </div>
+                  @else
+                    <p>No hay usuarios registrados.</p>
+                  @endif
+                @endif
               </div>
             </div>
           </div>

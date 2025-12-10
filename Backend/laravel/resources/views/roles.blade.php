@@ -13,14 +13,15 @@
                                 </form>
                             </div>
                             <div class="card-body">
-                                <?php
-                                use Illuminate\Support\Facades\DB;
-                                $usuarios = DB::table('users')->select('id','name','email')->limit(50)->get();
-                                $roles = DB::table('roles')->select('id','nombre','descripcion')->get();
-                                ?>
-                                @if(count($usuarios))
+                                @if(count($usuarios) || count($roles))
                                     <div class="mb-4">
-                                        <h6 class="mb-2"><i class="fas fa-edit mr-1"></i> Editar / Eliminar Roles</h6>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0"><i class="fas fa-edit mr-1"></i> Editar / Eliminar Roles</h6>
+                                            <form method="GET" action="{{ route('roles.index') }}" class="form-inline">
+                                                <input name="search_roles" value="{{ request('search_roles') }}" class="form-control form-control-sm mr-2" placeholder="Buscar rol">
+                                                <button class="btn btn-outline-secondary btn-sm">Buscar</button>
+                                            </form>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-sm">
                                                 <thead><tr><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr></thead>
@@ -53,19 +54,33 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                        <div class="mt-3">
+                                            {{ $roles->appends(['search_roles' => request('search_roles'), 'search_users' => request('search_users')])->links() }}
+                                        </div>
                                     </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                            <tr>
-                                                <th>Usuario</th>
-                                                <th>Email</th>
-                                                <th>Editar roles</th>
-                                            </tr>
-                                            </thead>
+                                    
+                                    <hr class="my-4">
+                                    
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0"><i class="fas fa-users mr-1"></i> Asignar Roles a Usuarios</h6>
+                                            <form method="GET" action="{{ route('roles.index') }}" class="form-inline">
+                                                <input name="search_users" value="{{ request('search_users') }}" class="form-control form-control-sm mr-2" placeholder="Buscar usuario">
+                                                <button class="btn btn-outline-secondary btn-sm">Buscar</button>
+                                            </form>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Email</th>
+                                                    <th>Editar roles</th>
+                                                </tr>
+                                                </thead>
                                             <tbody>
                                             @foreach($usuarios as $u)
-                                                <?php $rolIds = DB::table('rol_usuario')->where('user_id',$u->id)->pluck('rol_id')->toArray(); ?>
+                                                <?php $rolIds = \Illuminate\Support\Facades\DB::table('rol_usuario')->where('user_id',$u->id)->pluck('rol_id')->toArray(); ?>
                                                 <tr>
                                                     <td>{{ $u->name }}</td>
                                                     <td>{{ $u->email }}</td>
@@ -83,11 +98,15 @@
                                                     </td>
                                                 </tr>
                                             @endforeach
-                                            </tbody>
-                                        </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="mt-3">
+                                            {{ $usuarios->appends(['search_users' => request('search_users'), 'search_roles' => request('search_roles')])->links() }}
+                                        </div>
                                     </div>
                                 @else
-                                    <p>No hay usuarios.</p>
+                                    <p>No hay usuarios ni roles.</p>
                                 @endif
                             </div>
                         </div>

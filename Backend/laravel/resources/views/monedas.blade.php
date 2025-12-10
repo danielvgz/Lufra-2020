@@ -38,7 +38,7 @@
           </a>
         </div>
         <div class="card-body">
-          <?php $items = \Illuminate\Support\Facades\DB::table('monedas')->orderBy('nombre')->limit(200)->get(); ?>
+
           @if(count($items))
             <div class="table-responsive">
               <table class="table table-hover">
@@ -89,6 +89,9 @@
                   @endforeach
                 </tbody>
               </table>
+            </div>
+            <div class="mt-3">
+              {{ $items->links() }}
             </div>
           @else
             <div class="alert alert-info">

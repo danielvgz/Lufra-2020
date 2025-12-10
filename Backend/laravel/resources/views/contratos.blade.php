@@ -23,32 +23,6 @@
               <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-secondary ml-2">Imprimir / PDF</button>
             </form>
 
-            <?php
-              $q = \Illuminate\Support\Facades\DB::table('contratos as c')
-                ->join('empleados as e','e.id','=','c.empleado_id')
-                ->select('c.*','e.nombre','e.apellido');
-              if ($t = trim(request('q',''))) {
-                $q->where(function($w) use ($t){
-                  $w->where('e.nombre','like','%'.$t.'%')
-                    ->orWhere('e.apellido','like','%'.$t.'%')
-                    ->orWhere('c.puesto','like','%'.$t.'%')
-                    ->orWhere('c.empleado_id','=',$t);
-                });
-              }
-              if ($tipo = request('tipo')) { $q->where('c.tipo_contrato',$tipo); }
-              if ($d = request('desde')) { $q->whereDate('c.fecha_inicio','>=',$d); }
-              if ($h = request('hasta')) { $q->whereDate('c.fecha_fin','<=',$h); }
-              $items = $q->orderByDesc('c.id')->limit(100)->get();
-
-              $limite = \Carbon\Carbon::now()->addDays(30)->toDateString();
-              $alertas = \Illuminate\Support\Facades\DB::table('contratos as c')
-                ->join('empleados as e','e.id','=','c.empleado_id')
-                ->whereNotNull('c.fecha_fin')
-                ->whereDate('c.fecha_fin','<=',$limite)
-                ->select('c.id','c.fecha_fin','e.nombre','e.apellido')
-                ->orderBy('c.fecha_fin','asc')->limit(50)->get();
-            ?>
-
             @if(count($alertas))
               <div class="alert alert-warning py-2">
                 <strong>Alertas:</strong> Contratos por vencer en 30 días:
@@ -62,7 +36,6 @@
 
             <hr>
             <h6>Nuevo contrato</h6>
-            <?php $emps = \Illuminate\Support\Facades\DB::table('empleados')->select('id','nombre','apellido')->orderBy('nombre')->limit(200)->get(); ?>
             <form method="POST" action="{{ route('contratos.store') }}" class="mb-4">
               @csrf
               <div class="form-row">
@@ -186,6 +159,9 @@
                   @endforeach
                   </tbody>
                 </table>
+              </div>
+              <div class="mt-3">
+                {{ $items->appends(request()->query())->links('pagination::bootstrap-4') }}
               </div>
             @else
               <p>No hay contratos registrados.</p>

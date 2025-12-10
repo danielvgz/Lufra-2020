@@ -186,10 +186,13 @@
                             <hr>
                             
                             <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="show_notifications" value="1" checked>
-                                    <i class="fa fa-bell"></i> Mostrar notificaciones
-                                </label>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="show_notifications" name="show_notifications" value="1" {{ config('settings.show_notifications', '1') == '1' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="show_notifications">
+                                        <i class="fa fa-bell"></i> Mostrar notificaciones en el navbar
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Cuando está desactivado, el ícono de notificaciones no se mostrará en la barra superior</small>
                             </div>
                         </div>
                     </div>

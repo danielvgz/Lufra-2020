@@ -48,7 +48,7 @@ class NotificationHelper
                 'title' => 'Pago Aceptado',
                 'message' => "El empleado {$nombreEmpleado} ha aceptado su pago.",
                 'data' => [
-                    'recibo_id' => $pagoId,
+                    'pago_id' => $pagoId,
                     'empleado_id' => $empleadoId,
                 ],
             ]);
@@ -75,7 +75,7 @@ class NotificationHelper
                 'title' => 'Pago Rechazado',
                 'message' => "El empleado {$nombreEmpleado} ha rechazado su pago.",
                 'data' => [
-                    'recibo_id' => $pagoId,
+                    'pago_id' => $pagoId,
                     'empleado_id' => $empleadoId,
                 ],
             ]);

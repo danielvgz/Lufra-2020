@@ -1,7 +1,6 @@
 @extends('layouts')
 @section('content')
 
-
     <section class="content pt-3">
       <div class="container-fluid">
         <div class="card">

@@ -86,6 +86,30 @@
                 @if(config('settings.app_email'))
                     <small class="company-info"><i class="fas fa-envelope mr-1"></i>{{ config('settings.app_email') }}</small>
                 @endif
+
+                @if (config('settings.app_address1') || config('settings.app_address2'))
+                    <small class="company-info"><i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ config('settings.app_address1') }}
+                        @if (config('settings.app_address1') && config('settings.app_address2'))
+                            ,
+                        @endif
+                        {{ config('settings.app_address2') }}
+                    </small>
+                @endif
+
+                @if( config('settings.city'))
+                    <small class="company-info"><i class="fas fa-city mr-1"></i>{{ config('settings.city') }}</small>
+                @endif
+
+                @if(config('settings.state') || config('settings.zip_code'))
+                    <small class="company-info"><i class="fas fa-map-marked-alt mr-1"></i>
+                        {{ config('settings.state') }}
+                        @if (config('settings.state') && config('settings.zip_code'))
+                            ,
+                        @endif
+                        {{ config('settings.zip_code') }}
+                    </small>
+                @endif
             </div>
             
             <p class="login-box-msg text-center"><i class="fas fa-sign-in-alt mr-2"></i>Inicia sesión para continuar</p>

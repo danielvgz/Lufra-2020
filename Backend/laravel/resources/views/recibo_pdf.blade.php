@@ -12,9 +12,51 @@
         td, th { padding: 6px 8px; border: 1px solid #ccc; font-size: 12px; }
         .right { text-align: right; }
         .muted { color: #666; }
+        .header { display:flex; flex-direction: column; align-items: flex-start; margin-bottom: 24px; }
+        .header img {max-width: 100px; max-height: 60px; margin-bottom: 8px; }
+        .header .brand-text { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .header .company-info { font-size: 12px; color: #666; margin-bottom: 2px; }
     </style>
 </head>
 <body>
+    <div class="header">
+                @if(config('settings.image'))
+                    <img src="{{ asset('storage/settings/') }}/{{ config('settings.image') }}" alt="Logo">
+                @endif
+                <span class="brand-text">
+                    {{ config('settings.app_name', config('app.name', 'Sistema de Nóminas')) }}
+                </span>
+                @if(config('settings.register_number'))
+                    <small class="company-info"><i class="fas fa-id-card mr-1"></i>{{ config('settings.register_number') }}</small>
+                @endif
+                @if(config('settings.app_email'))
+                    <small class="company-info"><i class="fas fa-envelope mr-1"></i>{{ config('settings.app_email') }}</small>
+                @endif
+
+                @if (config('settings.app_address1') || config('settings.app_address2'))
+                    <small class="company-info"><i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ config('settings.app_address1') }}
+                        @if (config('settings.app_address1') && config('settings.app_address2'))
+                            ,
+                        @endif
+                        {{ config('settings.app_address2') }}
+                    </small>
+                @endif
+
+                @if( config('settings.city'))
+                    <small class="company-info"><i class="fas fa-city mr-1"></i>{{ config('settings.city') }}</small>
+                @endif
+
+                @if(config('settings.state') || config('settings.zip_code'))
+                    <small class="company-info"><i class="fas fa-map-marked-alt mr-1"></i>
+                        {{ config('settings.state') }}
+                        @if (config('settings.state') && config('settings.zip_code'))
+                            ,
+                        @endif
+                        {{ config('settings.zip_code') }}
+                    </small>
+                @endif
+            </div>
     <h1>Recibo de nómina</h1>
     <p class="muted">Periodo: {{ $recibo->periodo->codigo }} ({{ $recibo->periodo->fecha_inicio }} a {{ $recibo->periodo->fecha_fin }})</p>
 

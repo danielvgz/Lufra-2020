@@ -69,7 +69,11 @@
                                                                 <button class="btn btn-sm btn-warning">Cerrar período</button>
                                                             </form>
                                                         @else
-                                                            <span class="text-muted">Cerrado</span>
+                                                            <form method="POST" action="{{ route('nominas.periodo.reabrir') }}" class="d-inline" onsubmit="return confirm('¿Reabrir período {{ $p->codigo }}?')">
+                                                                @csrf
+                                                                <input type="hidden" name="periodo_id" value="{{ $p->id }}">
+                                                                <button class="btn btn-sm btn-success">Reabrir período</button>
+                                                            </form>
                                                         @endif
                                                     </td>
                                                 </tr>

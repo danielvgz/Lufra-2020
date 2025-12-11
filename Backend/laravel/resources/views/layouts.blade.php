@@ -255,6 +255,12 @@
           <a class="list-group-item list-group-item-action" href="{{ route('recibos_pagos') }}">
             <i class="fas fa-money-bill-wave mr-2"></i>Recibos y Pagos
           </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('impuestos.view') }}">
+            <i class="fas fa-percentage mr-2"></i>Impuestos
+          </a>
+          <a class="list-group-item list-group-item-action" href="{{ route('tabuladores.view') }}">
+            <i class="fas fa-list-alt mr-2"></i>Tabuladores Salariales
+          </a>
           @if(auth()->check() && auth()->user()->puede('asignar_roles'))
             <a class="list-group-item list-group-item-action" href="{{ url('/roles') }}">
               <i class="fas fa-user-shield mr-2"></i>Roles

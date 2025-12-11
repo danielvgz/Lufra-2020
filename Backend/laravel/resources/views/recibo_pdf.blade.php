@@ -29,10 +29,19 @@
     <h2>Detalle</h2>
     <table>
         <tr><th>Concepto</th><th class="right">Monto</th></tr>
-        <tr><td>Salario bruto</td><td class="right">{{ number_format($recibo->bruto, 2) }}</td></tr>
-        <tr><td>Deducciones - Impuesto</td><td class="right">{{ number_format($recibo->detalle_deducciones['impuesto'] ?? 0, 2) }}</td></tr>
-        <tr><td>Deducciones - Seguridad social</td><td class="right">{{ number_format($recibo->detalle_deducciones['seguridad_social'] ?? 0, 2) }}</td></tr>
-        <tr><th>Total deducciones</th><th class="right">{{ number_format($recibo->deducciones, 2) }}</th></tr>
+        <tr><td>Devengado</td><td class="right">{{ number_format($recibo->devengado ?? $recibo->bruto, 2) }}</td></tr>
+        @if($recibo->impuesto_monto > 0 || $recibo->impuesto_id)
+            @php
+                $impuesto = $recibo->impuesto_id ? \Illuminate\Support\Facades\DB::table('impuestos')->where('id', $recibo->impuesto_id)->first() : null;
+            @endphp
+            <tr>
+                <td>Impuesto {{ $impuesto ? $impuesto->nombre . ' (' . number_format($impuesto->porcentaje, 2) . '%)' : '' }}</td>
+                <td class="right">-{{ number_format($recibo->impuesto_monto ?? 0, 2) }}</td>
+            </tr>
+        @endif
+        @if($recibo->deducciones > 0 && $recibo->deducciones != $recibo->impuesto_monto)
+            <tr><td>Otras deducciones</td><td class="right">-{{ number_format($recibo->deducciones - ($recibo->impuesto_monto ?? 0), 2) }}</td></tr>
+        @endif
         <tr><th>Neto a pagar</th><th class="right">{{ number_format($recibo->neto, 2) }}</th></tr>
     </table>
 
@@ -43,7 +52,7 @@
     @if($pagosFinalizados->count() > 0)
         <h2>Pagos</h2>
         <table>
-            <tr><th>Fecha</th><th>Método</th><th>Moneda</th><th>Referencia</th><th>Estado</th><th class="right">Importe</th></tr>
+            <tr><th>Fecha</th><th>Método</th><th>Moneda</th><th>Referencia</th><th class="right">Importe</th></tr>
             @foreach($pagosFinalizados as $pago)
                 <?php 
                     $monedaInfo = null;
@@ -56,17 +65,14 @@
                     <td>{{ $pago->metodo }}</td>
                     <td>{{ $monedaInfo ? $monedaInfo->simbolo . ' ' . $monedaInfo->codigo : ($pago->moneda ?? 'N/A') }}</td>
                     <td>{{ $pago->referencia }}</td>
-                    <td style="color: {{ $pago->estado === 'aceptado' ? 'green' : 'red' }}; font-weight: bold;">{{ ucfirst($pago->estado) }}</td>
                     <td class="right">{{ $monedaInfo ? $monedaInfo->simbolo : '' }} {{ number_format($pago->importe, 2) }}</td>
                 </tr>
             @endforeach
             <tr>
-                <th colspan="5" class="right">Total pagos {{ $pagosFinalizados->where('estado', 'aceptado')->count() > 0 ? 'aceptados' : 'procesados' }}:</th>
+                <th colspan="4" class="right">Total pagos:</th>
                 <th class="right">{{ number_format($pagosFinalizados->sum('importe'), 2) }}</th>
             </tr>
         </table>
     @endif
-
-    <p class="muted">Estado: {{ $recibo->estado }} {{ $recibo->locked_at ? '(aprobado)' : '' }}</p>
 </body>
 </html>

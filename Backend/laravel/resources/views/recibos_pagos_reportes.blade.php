@@ -1,7 +1,7 @@
 @extends('layouts')
 @section('content')
 
-  <div class="content-wrapper">
+
     <section class="content pt-3">
       <div class="container-fluid">
         <div class="card">
@@ -39,5 +39,4 @@
         </div>
       </div>
     </section>
-  </div>
 @endsection

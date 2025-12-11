@@ -149,9 +149,9 @@
                       <td>{{ $p->fecha_fin }}</td>
                       <td><span class="badge badge-{{ $p->estado === 'cerrado' ? 'success' : 'secondary' }}">{{ $p->estado }}</span></td>
                       <td>
-                        <a class="btn btn-xs btn-outline-primary" href="{{ route('nomina.banco', ['periodo'=>$p->id]) }}">Archivo banco</a>
-                        <a class="btn btn-xs btn-outline-secondary" href="{{ route('nomina.obligaciones', ['periodo_id'=>$p->id]) }}">Obligaciones</a>
-                        <a class="btn btn-xs btn-outline-info" href="{{ route('recibos_pagos.reportes', ['desde'=>null,'hasta'=>null]) }}">Reportes</a>
+                        <a class="btn btn-xs btn-outline-primary" href="{{ route('recibos_pagos.archivo_banco') }}">Archivo banco</a>
+                        <a class="btn btn-xs btn-outline-secondary" href="{{ route('recibos_pagos.obligaciones') }}">Obligaciones</a>
+                        <a class="btn btn-xs btn-outline-info" href="{{ route('recibos_pagos.reportes') }}">Reportes</a>
                       </td>
                     </tr>
                   @endforeach
@@ -204,8 +204,7 @@
                 ->join('periodos_nomina as pn','pn.id','=','r.periodo_nomina_id')
                 ->leftJoin('contratos as c','c.empleado_id','=','r.empleado_id')
                 ->whereNull('p.id')
-                // Solo recibos de períodos cerrados y empleados con contrato activo dentro del período
-                ->where('pn.estado','cerrado')
+                // Mostrar recibos sin pago de cualquier período (abierto o cerrado)
                 ->where(function($w){
                   $w->whereColumn('c.fecha_inicio','<=','pn.fecha_fin')
                     ->where(function($w2){
@@ -220,16 +219,21 @@
                   if (is_numeric($q)) { $w->orWhere('r.id','=',$q); }
                 });
               }
-              $recibosSinPago = $recibosQuery->select('r.id','e.nombre','e.apellido','r.neto')->orderByDesc('r.id')->paginate(20, ['*'], 'recibos_page');
+              $recibosSinPago = $recibosQuery->select('r.id','e.nombre','e.apellido','r.neto','pn.codigo as periodo_codigo','pn.estado as periodo_estado')->orderByDesc('r.id')->paginate(20, ['*'], 'recibos_page');
             ?>
             @if(count($recibosSinPago))
               <div class="table-responsive">
                 <table class="table table-sm">
-                  <thead><tr><th>Recibo</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Moneda</th><th>Método</th><th>Concepto</th><th>Asignar</th></tr></thead>
+                  <thead><tr><th>Recibo</th><th>Período</th><th>Empleado</th><th>Neto</th><th>Importe</th><th>Moneda</th><th>Método</th><th>Concepto</th><th>Impuesto</th><th>Asignar</th></tr></thead>
                   <tbody>
                     @foreach($recibosSinPago as $r)
                       <tr>
                         <td>#{{ $r->id }}</td>
+                        <td>
+                          <span class="badge badge-{{ $r->periodo_estado === 'cerrado' ? 'success' : 'warning' }}">
+                            {{ $r->periodo_codigo }}
+                          </span>
+                        </td>
                         <td>{{ $r->nombre }} {{ $r->apellido }}</td>
                         <td>{{ number_format($r->neto,2) }}</td>
                         <td>
@@ -287,6 +291,25 @@
                               <option value="">-- Seleccionar --</option>
                               @foreach($conceptos as $c)
                                 <option value="{{ $c->nombre }}">{{ $c->nombre }}</option>
+                              @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <?php 
+                              $impuestos = \Illuminate\Support\Facades\DB::table('impuestos')
+                                ->where('activo', true)
+                                ->orderBy('por_defecto', 'desc')
+                                ->orderBy('nombre')
+                                ->limit(100)
+                                ->get(); 
+                              $impuestoPorDefecto = $impuestos->firstWhere('por_defecto', true);
+                            ?>
+                            <select name="impuesto_id" class="form-control form-control-sm mr-2" style="width: 120px;">
+                              <option value="">-- Sin impuesto --</option>
+                              @foreach($impuestos as $imp)
+                                <option value="{{ $imp->id }}" {{ $imp->por_defecto ? 'selected' : '' }}>
+                                  {{ $imp->nombre }} ({{ number_format($imp->porcentaje, 2) }}%)
+                                </option>
                               @endforeach
                             </select>
                         </td>

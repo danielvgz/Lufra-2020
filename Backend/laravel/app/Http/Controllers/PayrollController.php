@@ -37,22 +37,45 @@ class PayrollController extends Controller
             return response()->json(['message' => 'Periodo cerrado, no se puede recalcular.'], 422);
         }
 
-        $taxRate = (float)($request->input('impuesto', 0.10));
+        // Obtener impuesto por defecto
+        $impuestoPorDefecto = DB::table('impuestos')
+            ->where('activo', true)
+            ->where('por_defecto', true)
+            ->first();
+        
+        $taxRate = $impuestoPorDefecto ? ($impuestoPorDefecto->porcentaje / 100) : (float)($request->input('impuesto', 0.10));
         $ssRate  = (float)($request->input('seguridad_social', 0.05));
 
-        DB::transaction(function () use ($period, $taxRate, $ssRate) {
+        DB::transaction(function () use ($period, $taxRate, $ssRate, $impuestoPorDefecto) {
             $empleados = Employee::query()->where('estado','activo')->get();
+            
             foreach ($empleados as $emp) {
-                $bruto = (float)($emp->salario_base ?? 0);
-                $imp = round($bruto * $taxRate, 2);
-                $ss  = round($bruto * $ssRate, 2);
-                $ded = $imp + $ss;
-                $neto = max(0, round($bruto - $ded, 2));
+                // Verificar si el empleado ya tiene pagos en este período
+                $tienePagos = DB::table('pagos')
+                    ->join('recibos', 'pagos.recibo_id', '=', 'recibos.id')
+                    ->where('recibos.periodo_nomina_id', $period->id)
+                    ->where('recibos.empleado_id', $emp->id)
+                    ->exists();
+                
+                // Si ya tiene pagos, omitir el cálculo para este empleado
+                if ($tienePagos) {
+                    continue;
+                }
+                
+                $devengado = (float)($emp->salario_base ?? 0);
+                $impuestoMonto = round($devengado * $taxRate, 2);
+                $ss  = round($devengado * $ssRate, 2);
+                $ded = $impuestoMonto + $ss;
+                $neto = max(0, round($devengado - $ded, 2));
+                
                 $payload = [
-                    'bruto' => $bruto,
+                    'bruto' => $devengado, // mantener por compatibilidad
+                    'devengado' => $devengado,
+                    'impuesto_monto' => $impuestoMonto,
+                    'impuesto_id' => $impuestoPorDefecto ? $impuestoPorDefecto->id : null,
                     'deducciones' => $ded,
                     'detalle_deducciones' => [
-                        'impuesto' => $imp,
+                        'impuesto' => $impuestoMonto,
                         'seguridad_social' => $ss,
                     ],
                     'neto' => $neto,
@@ -272,11 +295,30 @@ class PayrollController extends Controller
             $codigo .= '-' . $inicio->format('d');
         }
 
-        $exists = DB::table('periodos_nomina')->where('codigo', $codigo)->exists();
-        if ($exists) {
-            return back()->withErrors(['codigo' => 'Ya existe un período con ese código'])->withInput();
+        // Buscar si existe un período con ese código
+        $existingPeriod = DB::table('periodos_nomina')->where('codigo', $codigo)->first();
+        
+        if ($existingPeriod) {
+            // Si existe y está cerrado, reabrirlo automáticamente
+            if ($existingPeriod->estado === 'cerrado') {
+                DB::table('periodos_nomina')
+                    ->where('id', $existingPeriod->id)
+                    ->update([
+                        'estado' => 'abierto',
+                        'updated_at' => now(),
+                    ]);
+                
+                return redirect()->route('nominas.index')
+                    ->with('success', "El período {$codigo} ya existía y estaba cerrado. Se ha reabierto automáticamente.");
+            }
+            
+            // Si existe y está abierto, mostrar mensaje
+            return back()
+                ->withErrors(['codigo' => "Ya existe un período con ese código ({$codigo}) y está abierto."])
+                ->withInput();
         }
 
+        // Crear nuevo período si no existe
         DB::table('periodos_nomina')->insert([
             'codigo' => $codigo,
             'fecha_inicio' => $inicio->toDateString(),
@@ -288,6 +330,30 @@ class PayrollController extends Controller
 
         return redirect()->route('nominas.index')->with('success', 'Período de nómina creado correctamente');
     }
+
+    public function reopenPeriod(Request $request)
+    {
+        $data = $request->validate([
+            'periodo_id' => ['required', 'integer', 'exists:periodos_nomina,id'],
+        ], [
+            'periodo_id.required' => 'El período es obligatorio.',
+            'periodo_id.integer' => 'El período debe ser un número.',
+            'periodo_id.exists' => 'El período no existe.',
+        ]);
+
+        $period = PayrollPeriod::findOrFail($data['periodo_id']);
+
+        if ($period->estado === 'abierto') {
+            return back()->withErrors(['estado' => 'El período ya está abierto.']);
+        }
+
+        $period->estado = 'abierto';
+        $period->save();
+
+        return redirect()->route('nominas.index')
+            ->with('success', "El período {$period->codigo} ha sido reabierto correctamente.");
+    }
+
 
     public function closePeriod(Request $request)
     {

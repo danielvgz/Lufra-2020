@@ -1,18 +1,6 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reporte detallado de recibos y pagos</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-  <style>
-    @media print {
-      .no-print { display: none !important; }
-      table { font-size: 11px; }
-    }
-  </style>
-</head>
-<body>
+@extends('layouts')
+@section('content')
+
 <div class="container mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Reporte detallado de recibos y pagos</h4>
@@ -69,5 +57,5 @@
     <p>No hay datos para el rango seleccionado.</p>
   @endif
 </div>
-</body>
-</html>
+
+@endsection

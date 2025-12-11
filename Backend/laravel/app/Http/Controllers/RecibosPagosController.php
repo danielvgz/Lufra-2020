@@ -77,7 +77,7 @@ class RecibosPagosController extends Controller
             ->join('periodos_nomina as pn', 'pn.id', '=', 'r.periodo_nomina_id')
             ->leftJoin('contratos as c', 'c.empleado_id', '=', 'r.empleado_id')
             ->whereNull('p.id')
-            ->where('pn.estado', 'cerrado')
+            // Cambio: Mostrar recibos sin pago de cualquier período (abierto o cerrado)
             ->where(function($w) {
                 $w->whereColumn('c.fecha_inicio', '<=', 'pn.fecha_fin')
                   ->where(function($w2) {
@@ -96,7 +96,7 @@ class RecibosPagosController extends Controller
             });
         }
 
-        $recibosSinPago = $recibosQuery->select('r.id', 'e.nombre', 'e.apellido', 'r.neto')
+        $recibosSinPago = $recibosQuery->select('r.id', 'e.nombre', 'e.apellido', 'r.neto', 'pn.codigo as periodo_codigo', 'pn.estado as periodo_estado')
             ->orderByDesc('r.id')
             ->paginate(20, ['*'], 'recibos_page');
 
@@ -105,28 +105,145 @@ class RecibosPagosController extends Controller
 
     public function reportes(Request $request)
     {
-        $desde = $request->date('desde');
-        $hasta = $request->date('hasta');
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+
+        $query = DB::table('periodos_nomina as pn')
+            ->leftJoin('recibos as r', function($join) use ($desde, $hasta) {
+                $join->on('r.periodo_nomina_id', '=', 'pn.id');
+                if ($desde) {
+                    $join->whereDate('r.created_at', '>=', $desde);
+                }
+                if ($hasta) {
+                    $join->whereDate('r.created_at', '<=', $hasta);
+                }
+            })
+            ->select(
+                'pn.codigo',
+                'pn.fecha_inicio',
+                'pn.fecha_fin',
+                DB::raw('COUNT(r.id) as recibos'),
+                DB::raw('COALESCE(SUM(r.neto), 0) as total_neto')
+            )
+            ->groupBy('pn.id', 'pn.codigo', 'pn.fecha_inicio', 'pn.fecha_fin')
+            ->orderByDesc('pn.fecha_inicio');
+
+        $periodos = $query->get();
+
+        return view('recibos_pagos_reportes', compact('periodos', 'desde', 'hasta'));
+    }
+
+    public function reportesDetalle(Request $request)
+    {
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+        $q = $request->input('q');
 
         $query = DB::table('recibos as r')
+            ->join('periodos_nomina as p', 'p.id', '=', 'r.periodo_nomina_id')
             ->join('empleados as e', 'e.id', '=', 'r.empleado_id')
-            ->join('periodos_nomina as pn', 'pn.id', '=', 'r.periodo_nomina_id')
+            ->leftJoin('pagos as pg', 'pg.recibo_id', '=', 'r.id')
             ->select(
-                'e.nombre', 'e.apellido', 'pn.codigo as periodo',
-                'r.bruto', 'r.deducciones', 'r.neto', 'r.estado',
-                'r.created_at'
+                'p.codigo as periodo',
+                'p.fecha_inicio',
+                'p.fecha_fin',
+                'r.id as recibo_id',
+                'e.nombre',
+                'e.apellido',
+                'r.neto',
+                'pg.id as pago_id',
+                'pg.metodo',
+                'pg.importe',
+                'pg.estado',
+                'pg.referencia as descripcion'
+            )
+            ->orderByDesc('p.fecha_inicio')
+            ->orderByDesc('r.id');
+
+        if ($desde) {
+            $query->whereDate('p.fecha_inicio', '>=', $desde);
+        }
+        if ($hasta) {
+            $query->whereDate('p.fecha_fin', '<=', $hasta);
+        }
+        if ($q) {
+            $query->where(function($w) use ($q) {
+                $w->where('e.nombre', 'like', "%{$q}%")
+                  ->orWhere('e.apellido', 'like', "%{$q}%")
+                  ->orWhere('p.codigo', 'like', "%{$q}%");
+                if (is_numeric($q)) {
+                    $w->orWhere('r.id', '=', $q);
+                }
+            });
+        }
+
+        $rows = $query->limit(500)->get();
+
+        return view('recibos_pagos_reportes_detalle', compact('rows', 'desde', 'hasta', 'q'));
+    }
+
+    public function archivoBanco(Request $request)
+    {
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+
+        $query = DB::table('pagos as pg')
+            ->join('recibos as r', 'r.id', '=', 'pg.recibo_id')
+            ->join('empleados as e', 'e.id', '=', 'r.empleado_id')
+            ->join('periodos_nomina as p', 'p.id', '=', 'r.periodo_nomina_id')
+            ->where('pg.estado', 'aceptado')
+            ->select(
+                'e.nombre',
+                'e.apellido',
+                'e.cuenta_bancaria as numero_cuenta',
+                'pg.importe',
+                'pg.moneda',
+                'p.codigo as periodo',
+                'pg.created_at'
             );
 
         if ($desde) {
-            $query->whereDate('r.created_at', '>=', $desde);
+            $query->whereDate('pg.created_at', '>=', $desde);
         }
         if ($hasta) {
-            $query->whereDate('r.created_at', '<=', $hasta);
+            $query->whereDate('pg.created_at', '<=', $hasta);
         }
 
-        $reportes = $query->orderByDesc('r.created_at')->get();
+        $pagos = $query->orderBy('e.apellido')->orderBy('e.nombre')->get();
 
-        return view('recibos_reportes', compact('reportes', 'desde', 'hasta'));
+        return view('recibos_pagos_banco', compact('pagos', 'desde', 'hasta'));
+    }
+
+    public function obligaciones(Request $request)
+    {
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+
+        $query = DB::table('recibos as r')
+            ->join('periodos_nomina as p', 'p.id', '=', 'r.periodo_nomina_id')
+            ->join('empleados as e', 'e.id', '=', 'r.empleado_id')
+            ->select(
+                'p.codigo as periodo',
+                'p.fecha_inicio',
+                'p.fecha_fin',
+                DB::raw('COUNT(r.id) as total_recibos'),
+                DB::raw('SUM(r.bruto) as total_bruto'),
+                DB::raw('SUM(r.deducciones) as total_deducciones'),
+                DB::raw('SUM(r.neto) as total_neto')
+            )
+            ->groupBy('p.id', 'p.codigo', 'p.fecha_inicio', 'p.fecha_fin')
+            ->orderByDesc('p.fecha_inicio');
+
+        if ($desde) {
+            $query->whereDate('p.fecha_inicio', '>=', $desde);
+        }
+        if ($hasta) {
+            $query->whereDate('p.fecha_fin', '<=', $hasta);
+        }
+
+        $obligaciones = $query->paginate(20);
+
+        return view('recibos_pagos_obligaciones', compact('obligaciones', 'desde', 'hasta'));
     }
 
     public function asignarPago(Request $request)
@@ -138,6 +255,7 @@ class RecibosPagosController extends Controller
             'metodo' => ['required', 'string', 'max:100'],
             'referencia' => ['nullable', 'string', 'max:200'],
             'concepto' => ['nullable', 'string', 'max:100'],
+            'impuesto_id' => ['nullable', 'integer', 'exists:impuestos,id'],
         ], [
             'recibo_id.required' => 'El recibo es obligatorio.',
             'recibo_id.integer' => 'El recibo debe ser un número.',
@@ -155,6 +273,8 @@ class RecibosPagosController extends Controller
             'referencia.max' => 'La referencia no debe superar 200 caracteres.',
             'concepto.string' => 'El concepto debe ser texto.',
             'concepto.max' => 'El concepto no debe superar 100 caracteres.',
+            'impuesto_id.integer' => 'El impuesto debe ser un número.',
+            'impuesto_id.exists' => 'El impuesto no existe.',
         ]);
 
         DB::table('pagos')->insert([
@@ -163,6 +283,7 @@ class RecibosPagosController extends Controller
             'moneda' => $data['moneda'],
             'metodo' => $data['metodo'],
             'referencia' => $data['referencia'] ?? null,
+            'impuesto_id' => $data['impuesto_id'] ?? null,
             'estado' => 'pendiente',
             'created_at' => now(),
             'updated_at' => now(),

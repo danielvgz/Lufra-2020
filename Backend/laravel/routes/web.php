@@ -73,10 +73,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/nominas', [NominaController::class, 'index'])->name('nominas.index');
     Route::post('/nominas/periodo/crear', [PayrollController::class, 'createPeriod'])->name('nominas.periodo.crear');
     Route::post('/nominas/periodo/cerrar', [PayrollController::class, 'closePeriod'])->name('nominas.periodo.cerrar');
+    Route::post('/nominas/periodo/reabrir', [PayrollController::class, 'reopenPeriod'])->name('nominas.periodo.reabrir');
 
     // Recibos y Pagos
     Route::get('/recibos-pagos', [RecibosPagosController::class, 'index'])->name('recibos_pagos');
     Route::get('/recibos-pagos/reportes', [RecibosPagosController::class, 'reportes'])->name('recibos_pagos.reportes');
+    Route::get('/recibos-pagos/reportes/detalle', [RecibosPagosController::class, 'reportesDetalle'])->name('recibos_pagos.reportes_detalle');
+    Route::get('/recibos-pagos/archivo-banco', [RecibosPagosController::class, 'archivoBanco'])->name('recibos_pagos.archivo_banco');
+    Route::get('/recibos-pagos/obligaciones', [RecibosPagosController::class, 'obligaciones'])->name('recibos_pagos.obligaciones');
     Route::post('/pagos/asignar', [RecibosPagosController::class, 'asignarPago'])->name('pagos.asignar');
     Route::post('/pagos/manual', [RecibosPagosController::class, 'pagoManual'])->name('pagos.manual');
     Route::post('/pagos/{pago}/aceptar', [RecibosPagosController::class, 'aceptar'])->name('pagos.aceptar');
@@ -134,6 +138,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/monedas', [App\Http\Controllers\MonedaController::class, 'store'])->name('monedas.crear');
     Route::post('/monedas/editar', [App\Http\Controllers\MonedaController::class, 'update'])->name('monedas.editar');
     Route::post('/monedas/eliminar', [App\Http\Controllers\MonedaController::class, 'destroy'])->name('monedas.eliminar');
+
+    // Impuestos
+    Route::get('/impuestos', [App\Http\Controllers\ImpuestosController::class, 'index'])->name('impuestos.view');
+    Route::post('/impuestos', [App\Http\Controllers\ImpuestosController::class, 'store'])->name('impuestos.store');
+    Route::put('/impuestos/{id}', [App\Http\Controllers\ImpuestosController::class, 'update'])->name('impuestos.update');
+    Route::delete('/impuestos/{id}', [App\Http\Controllers\ImpuestosController::class, 'destroy'])->name('impuestos.destroy');
+    Route::post('/impuestos/{id}/toggle', [App\Http\Controllers\ImpuestosController::class, 'toggle'])->name('impuestos.toggle');
+
+    // Tabuladores Salariales
+    Route::get('/tabuladores', [App\Http\Controllers\TabuladoresController::class, 'index'])->name('tabuladores.view');
+    Route::post('/tabuladores', [App\Http\Controllers\TabuladoresController::class, 'store'])->name('tabuladores.store');
+    Route::put('/tabuladores/{id}', [App\Http\Controllers\TabuladoresController::class, 'update'])->name('tabuladores.update');
+    Route::delete('/tabuladores/{id}', [App\Http\Controllers\TabuladoresController::class, 'destroy'])->name('tabuladores.destroy');
+    Route::post('/tabuladores/{id}/toggle', [App\Http\Controllers\TabuladoresController::class, 'toggle'])->name('tabuladores.toggle');
+    Route::get('/tabuladores/sueldo', [App\Http\Controllers\TabuladoresController::class, 'getSueldoByFrecuencia'])->name('tabuladores.sueldo');
 
     // Nómina - Reportes y Archivos
     Route::get('/nomina/banco/{periodo}', [PayrollController::class, 'bankFile'])->name('nomina.banco');

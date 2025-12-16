@@ -119,3 +119,73 @@
 </div>
 
 @endsection
+
+
+
+@section('scripts')
+<style>
+  @media print {
+    /* Ocultar elementos de navegación */
+    .no-print,
+    nav,
+    aside,
+    footer,
+    .navbar,
+    .sidebar,
+    .card-header {
+      display: none !important;
+    }
+    
+    /* Eliminar márgenes y bordes de contenedores */
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    
+    .content-wrapper,
+    .container-fluid,
+    .card,
+    .card-body {
+      margin: 0 !important;
+      padding: 10px !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: white !important;
+    }
+    
+    /* Mostrar el título de impresión */
+    .print-only {
+      display: block !important;
+    }
+    
+    /* Ajustar la tabla para impresión */
+    .table {
+      font-size: 11px;
+      width: 100%;
+      page-break-inside: auto;
+    }
+    
+    .table th,
+    .table td {
+      padding: 5px 8px;
+      page-break-inside: avoid;
+      page-break-after: auto;
+    }
+    
+    .table thead {
+      display: table-header-group;
+    }
+    
+    .table tfoot {
+      display: table-footer-group;
+    }
+  }
+  
+  /* Ocultar por defecto el contenido solo de impresión */
+  @media screen {
+    .print-only {
+      display: none;
+    }
+  }
+</style>
+@endsection

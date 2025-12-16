@@ -1,7 +1,60 @@
 @extends('layouts')
 @section('content')
 
-  
+   <style>
+    @media print {
+      .no-print { display: none !important; }
+      table { font-size: 11px; }
+    }
+        h1 { font-size: 18px; margin: 0 0 8px; }
+        h2 { font-size: 14px; margin: 16px 0 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 6px 8px; border: 1px solid #ccc; font-size: 12px; }
+        .right { text-align: right; }
+        .muted { color: #666; }
+        .header { display:flex; flex-direction: column; align-items: flex-start; margin-bottom: 24px; }
+        .header img {max-width: 100px; max-height: 60px; margin-bottom: 8px; }
+        .header .brand-text { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .header .company-info { font-size: 12px; color: #666; margin-bottom: 2px; }
+  </style>
+ <div class="header">
+                @if(config('settings.image'))
+                    <img src="{{ asset('storage/settings/') }}/{{ config('settings.image') }}" alt="Logo">
+                @endif
+                <span class="brand-text">
+                    {{ config('settings.app_name', config('app.name', 'Sistema de Nóminas')) }}
+                </span>
+                @if(config('settings.register_number'))
+                    <small class="company-info"><i class="fas fa-id-card mr-1"></i>{{ config('settings.register_number') }}</small>
+                @endif
+                @if(config('settings.app_email'))
+                    <small class="company-info"><i class="fas fa-envelope mr-1"></i>{{ config('settings.app_email') }}</small>
+                @endif
+
+                @if (config('settings.app_address1') || config('settings.app_address2'))
+                    <small class="company-info"><i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ config('settings.app_address1') }}
+                        @if (config('settings.app_address1') && config('settings.app_address2'))
+                            ,
+                        @endif
+                        {{ config('settings.app_address2') }}
+                    </small>
+                @endif
+
+                @if( config('settings.city'))
+                    <small class="company-info"><i class="fas fa-city mr-1"></i>{{ config('settings.city') }}</small>
+                @endif
+
+                @if(config('settings.state') || config('settings.zip_code'))
+                    <small class="company-info"><i class="fas fa-map-marked-alt mr-1"></i>
+                        {{ config('settings.state') }}
+                        @if (config('settings.state') && config('settings.zip_code'))
+                            ,
+                        @endif
+                        {{ config('settings.zip_code') }}
+                    </small>
+                @endif
+            </div>
     <section class="content pt-3">
       <div class="container-fluid">
         <div class="card">

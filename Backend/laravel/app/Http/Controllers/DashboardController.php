@@ -47,13 +47,27 @@ class DashboardController extends Controller
         }
         $deps = $depsQuery->paginate(10, ['*'], 'deps_page');
         
-        // Contratos con paginación y búsqueda
-        $contratosQuery = DB::table('contratos')
-            ->select('id','tipo_contrato','frecuencia_pago','salario_base');
+        // Contratos con paginación y búsqueda (incluye código y cédula del empleado)
+        $contratosQuery = DB::table('contratos as c')
+            ->leftJoin('users as u', 'u.id', '=', 'c.empleado_id')
+            ->leftJoin('empleados as emp', 'emp.user_id', '=', 'u.id')
+            ->select(
+                'c.id',
+                'c.tipo_contrato',
+                'c.frecuencia_pago',
+                'c.salario_base',
+                'u.id as empleado_user_id',
+                'u.name as empleado_name',
+                'emp.numero_empleado as empleado_codigo',
+                'emp.cedula as empleado_cedula'
+            );
         if ($searchContratos) {
             $contratosQuery->where(function($q) use ($searchContratos) {
-                $q->where('tipo_contrato', 'like', "%{$searchContratos}%")
-                  ->orWhere('frecuencia_pago', 'like', "%{$searchContratos}%");
+                $q->where('c.tipo_contrato', 'like', "%{$searchContratos}%")
+                  ->orWhere('c.frecuencia_pago', 'like', "%{$searchContratos}%")
+                  ->orWhere('u.name', 'like', "%{$searchContratos}%")
+                  ->orWhere('emp.numero_empleado', 'like', "%{$searchContratos}%")
+                  ->orWhere('emp.cedula', 'like', "%{$searchContratos}%");
             });
         }
         $contratosList = $contratosQuery->paginate(10, ['*'], 'contratos_page');
@@ -72,24 +86,29 @@ class DashboardController extends Controller
         
         // Obtener recibos y pagos según el rol del usuario
         if ($esEmpleado) {
-            // Para empleados: solo sus propios recibos
+            // Para empleados: solo sus propios recibos (incluir código, cédula y nombre)
             $recibosQuery = DB::table('recibos as r')
-                ->join('empleados as e','e.id','=','r.empleado_id')
-                ->where('e.user_id', auth()->id())
-                ->select('r.neto','r.estado')
+                ->join('empleados as emp','emp.id','=','r.empleado_id')
+                ->join('users as u','u.id','=','emp.user_id')
+                ->where('emp.user_id', auth()->id())
+                ->select('r.id','r.neto','r.estado','emp.numero_empleado as empleado_codigo','emp.cedula as empleado_cedula','u.name as empleado_name','u.id as empleado_user_id')
                 ->orderByDesc('r.id');
             if ($searchRecibos) {
                 $recibosQuery->where('r.estado', 'like', "%{$searchRecibos}%");
             }
             $recibosList = $recibosQuery->paginate(10, ['*'], 'recibos_page');
             
-            // Para empleados: mostrar sus propios pagos aceptados, rechazados o pendientes
+            // Para empleados: mostrar sus propios pagos aceptados, rechazados o pendientes (con datos del empleado)
             $pagosQuery = DB::table('pagos as p')
                 ->join('recibos as r','r.id','=','p.recibo_id')
-                ->join('empleados as e','e.id','=','r.empleado_id')
-                ->where('e.user_id', auth()->id())
+                ->join('empleados as emp','emp.id','=','r.empleado_id')
+                ->join('users as u','u.id','=','emp.user_id')
+                ->where('emp.user_id', auth()->id())
                 ->whereIn('p.estado', ['aceptado','rechazado','pendiente'])
-                ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id','p.respondido_en','p.updated_at','p.created_at','p.pagado_en')
+                ->select(
+                    'p.id','p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.respondido_en','p.updated_at','p.created_at','p.pagado_en',
+                    'emp.numero_empleado as empleado_codigo','emp.cedula as empleado_cedula','u.name as empleado_name','u.id as empleado_user_id'
+                )
                 ->orderByDesc('p.id');
             
             // Filtros de pagos
@@ -109,17 +128,22 @@ class DashboardController extends Controller
             $pagosList = $pagosQuery->paginate(10, ['*'], 'pagos_page');
         } else {
             // Para administradores: todos los recibos y pagos
-            $recibosQuery = DB::table('recibos')
-                ->select('id','empleado_id','neto','estado')
-                ->orderByDesc('id');
+            $recibosQuery = DB::table('recibos as r')
+                ->leftJoin('empleados as emp','emp.id','=','r.empleado_id')
+                ->leftJoin('users as u','u.id','=','emp.user_id')
+                ->select('r.id','r.empleado_id','r.neto','r.estado','emp.numero_empleado as empleado_codigo','emp.cedula as empleado_cedula','u.name as empleado_name','u.id as empleado_user_id')
+                ->orderByDesc('r.id');
             if ($searchRecibos) {
                 $recibosQuery->where('estado', 'like', "%{$searchRecibos}%");
             }
             $recibosList = $recibosQuery->paginate(10, ['*'], 'recibos_page');
             
-            $pagosQuery = DB::table('pagos')
-                ->select('id','recibo_id','importe','metodo','created_at','updated_at','pagado_en')
-                ->orderByDesc('id');
+            $pagosQuery = DB::table('pagos as p')
+                ->leftJoin('recibos as r','r.id','=','p.recibo_id')
+                ->leftJoin('empleados as emp','emp.id','=','r.empleado_id')
+                ->leftJoin('users as u','u.id','=','emp.user_id')
+                ->select('p.id','p.recibo_id','p.importe','p.metodo','p.created_at','p.updated_at','p.pagado_en','p.estado', 'emp.numero_empleado as empleado_codigo','emp.cedula as empleado_cedula','u.name as empleado_name','u.id as empleado_user_id')
+                ->orderByDesc('p.id');
             
             // Filtros de pagos
             if ($request->input('metodo_pago')) {

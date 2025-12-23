@@ -97,24 +97,7 @@
               <button class="btn btn-primary">Guardar cambios</button>
               <a href="{{ url('/home') }}" class="btn btn-secondary ml-2">Cancelar</a>
             </form>
-            @if(isset($contratoInfo) && $contratoInfo)
-              <hr>
-              <h5>Contrato actual</h5>
-              <div class="mb-3">
-                <p><strong>ID contrato:</strong> {{ $contratoInfo['id'] }}</p>
-                <p><strong>Puesto:</strong> {{ $contratoInfo['puesto'] ?? '—' }}</p>
-                <p><strong>Tipo:</strong> {{ $contratoInfo['tipo_contrato'] ?? '—' }}</p>
-                <p><strong>Inicio:</strong> {{ $contratoInfo['fecha_inicio'] ?? '—' }}</p>
-                <p><strong>Fin:</strong> {{ $contratoInfo['fecha_fin'] ?? 'Indefinido' }}</p>
-                @if($contratoInfo['days_remaining'] === null)
-                  <p><em>Duración: indefinida</em></p>
-                @elseif($contratoInfo['expired'])
-                  <p class="text-danger"><strong>Contrato vencido ({{ $contratoInfo['fecha_fin'] }})</strong></p>
-                @else
-                  <p><strong>Tiempo restante:</strong> {{ $contratoInfo['days_remaining'] }} días</p>
-                @endif
-              </div>
-            @endif
+           
             <hr>
             <form method="POST" action="{{ route('perfil.desactivar') }}" onsubmit="return confirm('¿Desactivar tu cuenta? No podrás acceder hasta que un admin la reactive.');">
               @csrf

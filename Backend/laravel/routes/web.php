@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
 
     // Contratos
     Route::get('/contratos', [ContratoController::class, 'index'])->name('contratos.index');
+    Route::get('/contratos/{id}', [ContratoController::class, 'show'])->name('contratos.show');
+    Route::get('/contratos/empleado/{userId}', [ContratoController::class, 'byEmployee'])->name('contratos.by_employee');
+    Route::get('/contratos/{id}/edit', [ContratoController::class, 'edit'])->name('contratos.edit');
     Route::post('/contratos', [ContratoController::class, 'store'])->name('contratos.store');
     Route::post('/contratos/{id}', [ContratoController::class, 'update'])->name('contratos.update');
     Route::post('/contratos/{id}/delete', [ContratoController::class, 'destroy'])->name('contratos.destroy');

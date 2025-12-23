@@ -128,6 +128,13 @@ class ContratoController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Only administrators may update contratos via this route
+        $user = auth()->user();
+        $isAdmin = $user && ($user->tieneRol('administrador') || $user->tieneRol('Administrador'));
+        if (!$isAdmin) {
+            abort(403);
+        }
+
         $request->validate(['id' => ['nullable']]);
 
         $upd = [];
@@ -166,13 +173,87 @@ class ContratoController extends Controller
             ->select('e.name')
             ->first();
 
+        // Authorization: only administrators may delete contratos
+        $user = auth()->user();
+        $isAdmin = $user && ($user->tieneRol('administrador') || $user->tieneRol('Administrador'));
+        if (!$isAdmin) {
+            abort(403);
+        }
+
         DB::table('contratos')->where('id', $id)->delete();
 
         if ($contrato) {
-            $empleadoNombre = "{$contrato->nombre} {$contrato->apellido}";
+            // $contrato->name comes from the joined users table (e.name)
+            $empleadoNombre = $contrato->name ?? ($contrato->empleado_name ?? 'Empleado');
             \App\Http\Controllers\NotificationHelper::notifyContratoEliminado($empleadoNombre, auth()->id());
         }
 
         return redirect()->route('contratos.index')->with('success', 'Contrato eliminado correctamente');
+    }
+
+    /**
+     * Show a single contrato detail by id.
+     */
+    public function show($id)
+    {
+        $contrato = DB::table('contratos as c')
+            ->leftJoin('users as u', 'u.id', '=', 'c.empleado_id')
+            ->leftJoin('empleados as emp', 'emp.user_id', '=', 'u.id')
+            ->where('c.id', $id)
+            ->select('c.*', 'u.id as empleado_user_id', 'u.name as empleado_name', 'u.email as empleado_email', 'emp.numero_empleado as empleado_codigo', 'emp.cedula as empleado_cedula')
+            ->first();
+
+        if (!$contrato) {
+            return redirect()->route('contratos.index')->with('error', 'Contrato no encontrado');
+        }
+
+        return view('contratos_show', ['contrato' => $contrato]);
+    }
+
+    /**
+     * Show the latest active contract for a given employee user id.
+     */
+    public function byEmployee($userId)
+    {
+        // buscar contrato activo o más reciente para el usuario
+        $contrato = DB::table('contratos as c')
+            ->leftJoin('users as u', 'u.id', '=', 'c.empleado_id')
+            ->leftJoin('empleados as emp', 'emp.user_id', '=', 'u.id')
+            ->where('c.empleado_id', $userId)
+            ->orderByDesc('c.id')
+            ->select('c.*', 'u.id as empleado_user_id', 'u.name as empleado_name', 'u.email as empleado_email', 'emp.numero_empleado as empleado_codigo', 'emp.cedula as empleado_cedula')
+            ->first();
+
+        if (!$contrato) {
+            return redirect()->route('contratos.index')->with('info', 'No se encontró un contrato para este empleado');
+        }
+
+        return view('contratos_show', ['contrato' => $contrato]);
+    }
+
+    /**
+     * Show edit form for contrato. Accessible by admin or the employee owner.
+     */
+    public function edit($id)
+    {
+        $contrato = DB::table('contratos as c')
+            ->leftJoin('users as u', 'u.id', '=', 'c.empleado_id')
+            ->leftJoin('empleados as emp', 'emp.user_id', '=', 'u.id')
+            ->where('c.id', $id)
+            ->select('c.*', 'u.id as empleado_user_id', 'u.name as empleado_name', 'emp.numero_empleado as empleado_codigo', 'emp.cedula as empleado_cedula')
+            ->first();
+
+        if (!$contrato) {
+            return redirect()->route('contratos.index')->with('error', 'Contrato no encontrado');
+        }
+
+        // Allow only administrators to access the edit form
+        $user = auth()->user();
+        $isAdmin = $user && ($user->tieneRol('administrador') || $user->tieneRol('Administrador'));
+        if (!$isAdmin) {
+            abort(403);
+        }
+
+        return view('contratos_edit', ['contrato' => $contrato]);
     }
 }

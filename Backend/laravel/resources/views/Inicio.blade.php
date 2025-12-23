@@ -147,14 +147,27 @@
                                 @if(count($contratosList))
                                     <div class="table-responsive">
                                         <table class="table table-sm">
-                                            <thead><tr><th>ID</th><th>Tipo</th><th>Frecuencia</th><th>Salario</th></tr></thead>
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Código</th>
+                                                    <th>Cédula</th>
+                                                    <th>Empleado</th>
+                                                    <th>Tipo</th>
+                                                    <th>Frecuencia</th>
+                                                    <th class="text-right">Salario</th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                             @foreach($contratosList as $c)
                                                 <tr>
                                                     <td>{{ $c->id }}</td>
+                                                    <td>{{ $c->empleado_codigo ?? '-' }}</td>
+                                                    <td>{{ $c->empleado_cedula ?? '-' }}</td>
+                                                    <td>{{ $c->empleado_name ?? '-' }}</td>
                                                     <td>{{ $c->tipo_contrato }}</td>
                                                     <td>{{ $c->frecuencia_pago }}</td>
-                                                    <td>{{ number_format($c->salario_base, 2) }}</td>
+                                                    <td class="text-right">{{ isset($c->salario_base) ? number_format($c->salario_base, 2) : '-' }}</td>
                                                 </tr>
                                             @endforeach
                                             </tbody>
@@ -256,12 +269,28 @@
                                         @if(count($recibosList))
                                             <div class="table-responsive">
                                                 <table class="table table-sm">
-                                                    <thead><tr><th>Neto</th><th>Estado</th></tr></thead>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Código empleado</th>
+                                                            <th>Cédula</th>
+                                                            <th>Empleado</th>
+                                                            <th>Neto</th>
+                                                            <th>Estado</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
                                                     <tbody>
                                                     @foreach($recibosList as $r)
                                                         <tr>
+                                                            <td>{{ $r->empleado_codigo ?? '-' }}</td>
+                                                            <td>{{ $r->empleado_cedula ?? '-' }}</td>
+                                                            <td>{{ $r->empleado_name ?? '-' }}</td>
                                                             <td>{{ number_format($r->neto, 2) }}</td>
                                                             <td>{{ $r->estado }}</td>
+                                                            <td>
+                                                                <a class="btn btn-xs btn-outline-primary" target="_blank" href="{{ route('nomina.recibo.pdf', ['recibo'=>$r->id]) }}">Ver recibo</a>
+                                                                <a class="btn btn-xs btn-outline-secondary" href="{{ route('contratos.by_employee', ['userId' => $r->empleado_user_id ?? ($r->empleado_id ?? 0)]) }}">Ver contrato</a>
+                                                            </td>
                                                         </tr>
                                                     @endforeach
                                                     </tbody>
@@ -325,7 +354,24 @@
                                         @if(count($pagosList))
                                             <div class="table-responsive">
                                                 <table class="table table-sm">
-                                                    <thead><tr><th>Fecha</th><th>Importe</th><th>Método</th>@if($esEmpleado)<th>Descripción</th><th>Estado</th><th>Acciones</th>@endif</tr></thead>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Importe</th>
+                                                            <th>Método</th>
+                                                            <th>Estatus</th>
+                                                            <th>Código</th>
+                                                            <th>Cédula</th>
+                                                            <th>Empleado</th>
+                                                            @if(!$esEmpleado)
+                                                                <th>Acciones</th>
+                                                            @endif
+                                                            @if($esEmpleado)
+                                                                <th>Descripción</th>
+                                                                <th>Acciones</th>
+                                                            @endif
+                                                        </tr>
+                                                    </thead>
                                                     <tbody>
                                                     @foreach($pagosList as $pg)
                                                         <tr>
@@ -335,9 +381,18 @@
                                                             <td>{{ $fechaPago ? \Illuminate\Support\Carbon::parse($fechaPago)->format('d/m/Y') : '—' }}</td>
                                                             <td>{{ number_format($pg->importe, 2) }}</td>
                                                             <td>{{ $pg->metodo }}</td>
+                                                            <td><span class="badge bg-{{ ($pg->estado ?? 'pendiente') === 'aceptado' ? 'success' : (($pg->estado ?? 'pendiente') === 'rechazado' ? 'danger' : 'warning') }}">{{ $pg->estado ?? 'pendiente' }}</span></td>
+                                                            <td>{{ $pg->empleado_codigo ?? '-' }}</td>
+                                                            <td>{{ $pg->empleado_cedula ?? '-' }}</td>
+                                                            <td>{{ $pg->empleado_name ?? '-' }}</td>
+                                                            @if(!$esEmpleado)
+                                                            <td>
+                                                                <a class="btn btn-xs btn-outline-primary" target="_blank" href="{{ route('nomina.recibo.pdf', ['recibo'=>$pg->recibo_id ?? 0]) }}">Ver recibo</a>
+                                                                <a class="btn btn-xs btn-outline-secondary" href="{{ route('contratos.by_employee', ['userId' => $pg->empleado_user_id ?? ($pg->empleado_id ?? 0)]) }}">Ver contrato</a>
+                                                            </td>
+                                                            @endif
                                                             @if($esEmpleado)
                                                             <td>{{ $pg->descripcion ?? '-' }}</td>
-                                                            <td><span class="badge badge-{{ ($pg->estado ?? 'pendiente') === 'aceptado' ? 'success' : (($pg->estado ?? 'pendiente') === 'rechazado' ? 'danger' : 'warning') }}">{{ $pg->estado ?? 'pendiente' }}</span></td>
                                                             <td>
                                                                 @if(($pg->estado ?? 'pendiente') === 'pendiente')
                                                                     <form method="POST" action="{{ route('pagos.aceptar', ['pago'=>$pg->id]) }}" class="d-inline">@csrf<button class="btn btn-xs btn-success">Aceptar</button></form>
@@ -386,7 +441,7 @@
                                             @if(!empty($contratoInfo['estado']))
                                                 @php
                                                     $estado = strtolower($contratoInfo['estado']);
-                                                    $badgeClass = $estado === 'activo' ? 'badge-success' : ($estado === 'inactivo' || $estado === 'vencido' ? 'badge-danger' : 'badge-secondary');
+                                                    $badgeClass = $estado === 'activo' ? 'bg-success' : ($estado === 'inactivo' || $estado === 'vencido' ? 'bg-danger' : 'bg-secondary');
                                                 @endphp
                                                 <span class="badge {{ $badgeClass }}">{{ ucfirst($contratoInfo['estado']) }}</span>
                                             @endif
@@ -419,13 +474,13 @@
                                             <div class="col-md-4 d-flex align-items-center justify-content-end">
                                                 <div class="text-right">
                                                     @if(is_null($contratoInfo['days_remaining']))
-                                                        <span class="badge badge-info">Vigencia indefinida</span>
+                                                        <span class="badge bg-info">Vigencia indefinida</span>
                                                     @else
                                                         @if($contratoInfo['expired'])
-                                                            <span class="badge badge-danger">Vencido</span>
+                                                            <span class="badge bg-danger">Vencido</span>
                                                             <div class="text-muted small">Finalizó el {{ $contratoInfo['fecha_fin'] ? \Carbon\Carbon::parse($contratoInfo['fecha_fin'])->format('d/m/Y') : '-' }}</div>
                                                         @else
-                                                            <span class="badge badge-primary">{{ $contratoInfo['days_remaining'] }} días restantes</span>
+                                                            <span class="badge bg-primary">{{ $contratoInfo['days_remaining'] }} días restantes</span>
                                                             <div class="text-muted small">Hasta {{ $contratoInfo['fecha_fin'] ? \Carbon\Carbon::parse($contratoInfo['fecha_fin'])->format('d/m/Y') : '—' }}</div>
                                                         @endif
                                                     @endif

@@ -28,6 +28,22 @@ use App\Http\Controllers\PermissionController;
 Route::get('/', fn() => view('welcome'));
 Route::get('/inicio', [HomeController::class, 'index'])->name('inicio');
 
+// Ruta temporal pública para probar el listado de themes (quita en producción)
+Route::get('/themes-test', [\App\Http\Controllers\ThemeController::class, 'index'])->name('themes.test');
+
+// Ruta de diagnóstico: devuelve JSON con los registros en la tabla `themes`
+Route::get('/themes-debug', function () {
+    try {
+        $themes = \App\Models\Theme::all();
+        return response()->json([
+            'count' => $themes->count(),
+            'items' => $themes,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
 // Authentication
 Route::get('/registro', [RegisterController::class, 'show'])->name('register');
 Route::post('/registro', [RegisterController::class, 'register'])->name('register.post');
@@ -114,6 +130,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/configuracion', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [SettingController::class, 'store'])->name('settings.store');
+    Route::get('/templates/preview/{name}', [SettingController::class, 'previewTemplate'])->name('templates.preview');
+    Route::post('/templates/{name}/delete', [SettingController::class, 'deleteTemplate'])->name('templates.delete');
+    
+    // Theme management (upload/install/activate) - admin UI
+    Route::get('/themes', [\App\Http\Controllers\ThemeController::class, 'index'])->name('themes.index');
+    Route::post('/themes/upload', [\App\Http\Controllers\ThemeController::class, 'store'])->name('themes.upload');
+    Route::post('/themes/{theme}/activate', [\App\Http\Controllers\ThemeController::class, 'activate'])->name('themes.activate');
+    Route::post('/themes/{theme}/deactivate', [\App\Http\Controllers\ThemeController::class, 'deactivate'])->name('themes.deactivate');
+    Route::post('/themes/{theme}/delete', [\App\Http\Controllers\ThemeController::class, 'destroy'])->name('themes.delete');
+    // Remove filesystem folder by slug (for unregistered or inactive themes)
+    Route::post('/themes/{slug}/remove', [\App\Http\Controllers\ThemeController::class, 'removeFolder'])->name('themes.remove');
+
+    // Ruta temporal para sincronizar carpetas en public/themes con la tabla themes
+    Route::get('/themes-sync', [\App\Http\Controllers\ThemeController::class, 'sync'])->name('themes.sync');
+    // Registrar un tema (carpeta) en la BD por slug
+    Route::post('/themes/{slug}/register', [\App\Http\Controllers\ThemeController::class, 'register'])->name('themes.register');
 
     // Departamentos
     Route::get('/departamentos', [App\Http\Controllers\DepartamentoController::class, 'index'])->name('departamentos.view');

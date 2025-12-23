@@ -18,6 +18,60 @@
                   <input type="email" class="form-control" name="email" value="{{ old('email', auth()->user()->email) }}" required>
                 </div>
               </div>
+              @php
+                $employee = null;
+                try {
+                    if (auth()->check()) {
+                        $employee = \App\Models\Employee::where('user_id', auth()->id())->first();
+                    }
+                } catch (\Throwable $e) {
+                    $employee = null;
+                }
+              @endphp
+              @if($employee || (auth()->check() && (auth()->user()->tieneRol('empleado') || auth()->user()->tieneRol('Empleado'))))
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label>Cédula de identidad</label>
+                    <input type="text" class="form-control" name="cedula" value="{{ old('cedula', optional($employee)->cedula) }}">
+                  </div>
+                  <div class="form-group col-md-5">
+                    <label>Dirección</label>
+                    <input type="text" class="form-control" name="direccion" value="{{ old('direccion', optional($employee)->direccion) }}">
+                  </div>
+                  <div class="form-group col-md-3">
+                    <label>Talla de ropa</label>
+                    <select name="talla_ropa" class="form-control">
+                      @php $talla = old('talla_ropa', optional($employee)->talla_ropa); @endphp
+                      <option value="">--</option>
+                      <option value="XS" {{ $talla == 'XS' ? 'selected' : '' }}>XS</option>
+                      <option value="S" {{ $talla == 'S' ? 'selected' : '' }}>S</option>
+                      <option value="M" {{ $talla == 'M' ? 'selected' : '' }}>M</option>
+                      <option value="L" {{ $talla == 'L' ? 'selected' : '' }}>L</option>
+                      <option value="XL" {{ $talla == 'XL' ? 'selected' : '' }}>XL</option>
+                      <option value="XXL" {{ $talla == 'XXL' ? 'selected' : '' }}>XXL</option>
+                    </select>
+                  </div>
+                </div>
+              @endif
+              @php
+                $showNotifications = null;
+                $user = auth()->user();
+                $canToggle = false;
+                if ($user) {
+                    // allow roles 'Administrador' or 'empleado' (case-insensitive)
+                    $canToggle = $user->tieneRol('Administrador') || $user->tieneRol('administrador') || $user->tieneRol('empleado') || $user->tieneRol('Empleado');
+                    if ($canToggle) {
+                        $prefKey = 'user_' . $user->id . '_show_notifications';
+                        $showNotifications = \App\Models\Settings::where('key', $prefKey)->value('value');
+                    }
+                }
+              @endphp
+              @if($canToggle)
+                <div class="form-group form-check">
+                  <input type="checkbox" class="form-check-input" id="show_notifications" name="show_notifications" {{ old('show_notifications', $showNotifications) == '1' ? 'checked' : '' }}>
+                  <label class="form-check-label" for="show_notifications">Mostrar notificaciones en mi panel</label>
+                </div>
+              @endif
               <hr>
               <h5>Cambiar contraseña</h5>
               <div class="form-row">
@@ -43,6 +97,24 @@
               <button class="btn btn-primary">Guardar cambios</button>
               <a href="{{ url('/home') }}" class="btn btn-secondary ml-2">Cancelar</a>
             </form>
+            @if(isset($contratoInfo) && $contratoInfo)
+              <hr>
+              <h5>Contrato actual</h5>
+              <div class="mb-3">
+                <p><strong>ID contrato:</strong> {{ $contratoInfo['id'] }}</p>
+                <p><strong>Puesto:</strong> {{ $contratoInfo['puesto'] ?? '—' }}</p>
+                <p><strong>Tipo:</strong> {{ $contratoInfo['tipo_contrato'] ?? '—' }}</p>
+                <p><strong>Inicio:</strong> {{ $contratoInfo['fecha_inicio'] ?? '—' }}</p>
+                <p><strong>Fin:</strong> {{ $contratoInfo['fecha_fin'] ?? 'Indefinido' }}</p>
+                @if($contratoInfo['days_remaining'] === null)
+                  <p><em>Duración: indefinida</em></p>
+                @elseif($contratoInfo['expired'])
+                  <p class="text-danger"><strong>Contrato vencido ({{ $contratoInfo['fecha_fin'] }})</strong></p>
+                @else
+                  <p><strong>Tiempo restante:</strong> {{ $contratoInfo['days_remaining'] }} días</p>
+                @endif
+              </div>
+            @endif
             <hr>
             <form method="POST" action="{{ route('perfil.desactivar') }}" onsubmit="return confirm('¿Desactivar tu cuenta? No podrás acceder hasta que un admin la reactive.');">
               @csrf

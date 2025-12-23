@@ -33,6 +33,14 @@ class EmpleadoController extends Controller
         
         $usuarios = $query->orderBy('u.id', 'desc')->paginate(15);
         $detalle = $request->input('detalle');
+        // Si se pasó un id en 'detalle', cargar el usuario correspondiente (evitar que sea solo un string)
+        if ($detalle) {
+            try {
+                $detalle = DB::table('users')->find($detalle);
+            } catch (\Throwable $e) {
+                $detalle = null;
+            }
+        }
 
         return view('empleados', compact('usuarios', 'detalle'));
     }

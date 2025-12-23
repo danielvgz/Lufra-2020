@@ -1,0 +1,11 @@
+/* Bootstrap Basic theme custom styles */
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+.hero { padding: 4rem 0; }
+.hero .display-5 { font-weight: 600; }
+.feature h4 { font-weight: 600; }
+footer { color: #666; }
+
+/* Small responsive tweaks */
+@media (max-width: 576px) {
+  .hero { padding-top: 3rem; }
+}

@@ -83,12 +83,12 @@ class DashboardController extends Controller
             }
             $recibosList = $recibosQuery->paginate(10, ['*'], 'recibos_page');
             
-            // Para empleados: solo sus propios pagos aceptados o rechazados
+            // Para empleados: mostrar sus propios pagos aceptados, rechazados o pendientes
             $pagosQuery = DB::table('pagos as p')
                 ->join('recibos as r','r.id','=','p.recibo_id')
                 ->join('empleados as e','e.id','=','r.empleado_id')
                 ->where('e.user_id', auth()->id())
-                ->whereIn('p.estado', ['aceptado','rechazado'])
+                ->whereIn('p.estado', ['aceptado','rechazado','pendiente'])
                 ->select('p.recibo_id','p.importe','p.metodo','p.referencia as descripcion','p.estado','p.id','p.respondido_en','p.updated_at','p.created_at','p.pagado_en')
                 ->orderByDesc('p.id');
             
@@ -146,7 +146,56 @@ class DashboardController extends Controller
         if (empty($metodosPago)) {
             $metodosPago = ['Transferencia', 'Efectivo', 'Cheque', 'Pago móvil', 'Zelle'];
         }
-        
+
+        // Calcular información de contrato para el empleado autenticado
+        $contratoInfo = null;
+        if ($esEmpleado && auth()->check()) {
+            try {
+                $userId = auth()->id();
+                $contrato = DB::table('contratos')
+                    ->where('empleado_id', $userId)
+                    ->where(function($q) {
+                        $q->where('estado', 'activo')
+                          ->orWhereNull('fecha_fin')
+                          ->orWhereDate('fecha_fin', '>=', now());
+                    })
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($contrato) {
+                    $fechaFin = $contrato->fecha_fin ? \Carbon\Carbon::parse($contrato->fecha_fin) : null;
+                    $hoy = \Carbon\Carbon::today();
+                    if ($fechaFin) {
+                        if ($fechaFin->lt($hoy)) {
+                            $daysRemaining = 0;
+                            $expired = true;
+                        } else {
+                            $daysRemaining = $hoy->diffInDays($fechaFin);
+                            $expired = false;
+                        }
+                    } else {
+                        $daysRemaining = null;
+                        $expired = false;
+                    }
+
+                    $contratoInfo = [
+                        'id' => $contrato->id,
+                        'tipo_contrato' => $contrato->tipo_contrato ?? null,
+                        'puesto' => $contrato->puesto ?? null,
+                        'fecha_inicio' => $contrato->fecha_inicio ?? null,
+                        'fecha_fin' => $contrato->fecha_fin ?? null,
+                        'days_remaining' => $daysRemaining,
+                        'expired' => $expired,
+                        'salario_base' => $contrato->salario_base ?? null,
+                        'estado' => $contrato->estado ?? null,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // ignore errors and leave contratoInfo null
+                $contratoInfo = null;
+            }
+        }
+
         return view('inicio', compact(
             'empleados',
             'departamentos',
@@ -162,6 +211,7 @@ class DashboardController extends Controller
             'recibosList',
             'pagosList',
             'metodosPago'
+            , 'contratoInfo'
         ));
     }
 

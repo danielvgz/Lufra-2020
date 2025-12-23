@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',function(){console.debug('test_upload theme loaded');});

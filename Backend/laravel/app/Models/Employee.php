@@ -31,6 +31,8 @@ class Employee extends Model
         // nuevos campos
         'department_id',
         'puesto',
+        'cedula',
+        'talla_ropa',
         'salario_base',
     ];
 

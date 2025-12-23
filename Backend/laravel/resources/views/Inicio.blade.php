@@ -339,7 +339,10 @@
                                                             <td>{{ $pg->descripcion ?? '-' }}</td>
                                                             <td><span class="badge badge-{{ ($pg->estado ?? 'pendiente') === 'aceptado' ? 'success' : (($pg->estado ?? 'pendiente') === 'rechazado' ? 'danger' : 'warning') }}">{{ $pg->estado ?? 'pendiente' }}</span></td>
                                                             <td>
-                                                                @if(($pg->estado ?? 'pendiente') !== 'pendiente')
+                                                                @if(($pg->estado ?? 'pendiente') === 'pendiente')
+                                                                    <form method="POST" action="{{ route('pagos.aceptar', ['pago'=>$pg->id]) }}" class="d-inline">@csrf<button class="btn btn-xs btn-success">Aceptar</button></form>
+                                                                    <form method="POST" action="{{ route('pagos.rechazar', ['pago'=>$pg->id]) }}" class="d-inline" onsubmit="return confirm('¿Rechazar este pago?')">@csrf<button class="btn btn-xs btn-danger">Rechazar</button></form>
+                                                                @else
                                                                     <a class="btn btn-xs btn-outline-primary" target="_blank" href="{{ route('nomina.recibo.pdf', ['recibo'=>$pg->recibo_id ?? 0]) }}">Imprimir recibo</a>
                                                                 @endif
                                                             </td>
@@ -368,6 +371,80 @@
                 </div>
 
             </div>
+                <!-- Contrato del empleado (visible solo para empleados) -->
+                @if(isset($esEmpleado) && $esEmpleado)
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            @if(!empty($contratoInfo))
+                                <div class="card shadow-sm border-left-primary">
+                                    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h5 class="mb-0"><i class="fas fa-user-check mr-2 text-primary"></i>Mi contrato</h5>
+                                            <small class="text-muted">Información rápida sobre tu contrato</small>
+                                        </div>
+                                        <div>
+                                            @if(!empty($contratoInfo['estado']))
+                                                @php
+                                                    $estado = strtolower($contratoInfo['estado']);
+                                                    $badgeClass = $estado === 'activo' ? 'badge-success' : ($estado === 'inactivo' || $estado === 'vencido' ? 'badge-danger' : 'badge-secondary');
+                                                @endphp
+                                                <span class="badge {{ $badgeClass }}">{{ ucfirst($contratoInfo['estado']) }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <h6 class="mb-1">{{ $contratoInfo['puesto'] ?? '-' }}</h6>
+                                                <p class="mb-1 text-muted">Tipo: 
+                                                    @php
+                                                        $tipo = $contratoInfo['tipo_contrato'] ?? '';
+                                                        $tipoFmt = $tipo ? \Illuminate\Support\Str::of($tipo)->replace('_', ' ')->title() : '-';
+                                                    @endphp
+                                                    <strong>{{ $tipoFmt }}</strong>
+                                                </p>
+                                                <p class="mb-1 text-muted">Periodo: 
+                                                    @php
+                                                        $fi = $contratoInfo['fecha_inicio'] ?? null;
+                                                        $ff = $contratoInfo['fecha_fin'] ?? null;
+                                                    @endphp
+                                                    <strong>{{ $fi ? \Carbon\Carbon::parse($fi)->format('d/m/Y') : '-' }}</strong>
+                                                     —
+                                                    <strong>{{ $ff ? \Carbon\Carbon::parse($ff)->format('d/m/Y') : 'Indefinida' }}</strong>
+                                                </p>
+                                                @if(!is_null($contratoInfo['salario_base']))
+                                                    <p class="mb-0 text-muted">Salario base: <strong>{{ number_format($contratoInfo['salario_base'], 2) }}</strong></p>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-center justify-content-end">
+                                                <div class="text-right">
+                                                    @if(is_null($contratoInfo['days_remaining']))
+                                                        <span class="badge badge-info">Vigencia indefinida</span>
+                                                    @else
+                                                        @if($contratoInfo['expired'])
+                                                            <span class="badge badge-danger">Vencido</span>
+                                                            <div class="text-muted small">Finalizó el {{ $contratoInfo['fecha_fin'] ? \Carbon\Carbon::parse($contratoInfo['fecha_fin'])->format('d/m/Y') : '-' }}</div>
+                                                        @else
+                                                            <span class="badge badge-primary">{{ $contratoInfo['days_remaining'] }} días restantes</span>
+                                                            <div class="text-muted small">Hasta {{ $contratoInfo['fecha_fin'] ? \Carbon\Carbon::parse($contratoInfo['fecha_fin'])->format('d/m/Y') : '—' }}</div>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p>No estás asignado a ningún contrato activo o vigente.</p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
         </section>
     </div>
 

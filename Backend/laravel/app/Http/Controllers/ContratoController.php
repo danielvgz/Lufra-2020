@@ -25,16 +25,16 @@ class ContratoController extends Controller
             abort(403);
         }
 
-        // Construir query con filtros
+        // Construir query con filtros (empleado es ahora un usuario con rol 'empleado')
         $q = DB::table('contratos as c')
-            ->join('empleados as e', 'e.id', '=', 'c.empleado_id')
-            ->select('c.*', 'e.nombre', 'e.apellido');
+            ->join('users as e', 'e.id', '=', 'c.empleado_id')
+            ->select('c.*', 'e.name as empleado_name', 'e.email as empleado_email');
 
         // Búsqueda por texto
         if ($t = trim($request->input('q', ''))) {
             $q->where(function($w) use ($t) {
-                $w->where('e.nombre', 'like', '%'.$t.'%')
-                  ->orWhere('e.apellido', 'like', '%'.$t.'%')
+                $w->where('e.name', 'like', '%'.$t.'%')
+                  ->orWhere('e.email', 'like', '%'.$t.'%')
                   ->orWhere('c.puesto', 'like', '%'.$t.'%');
                 if (is_numeric($t)) {
                     $w->orWhere('c.empleado_id', '=', $t);
@@ -58,18 +58,22 @@ class ContratoController extends Controller
         // Alertas de contratos próximos a vencer
         $limite = Carbon::now()->addDays(30)->toDateString();
         $alertas = DB::table('contratos as c')
-            ->join('empleados as e', 'e.id', '=', 'c.empleado_id')
+            ->join('users as e', 'e.id', '=', 'c.empleado_id')
             ->whereNotNull('c.fecha_fin')
             ->whereDate('c.fecha_fin', '<=', $limite)
-            ->select('c.id', 'c.fecha_fin', 'e.nombre', 'e.apellido')
+            ->select('c.id', 'c.fecha_fin', 'e.name as empleado_name')
             ->orderBy('c.fecha_fin', 'asc')
             ->limit(50)
             ->get();
 
         // Empleados para select
-        $emps = DB::table('empleados')
-            ->select('id', 'nombre', 'apellido')
-            ->orderBy('nombre')
+        // Obtener usuarios que tengan el rol 'empleado'
+        $emps = DB::table('users')
+            ->join('rol_usuario as ru', 'ru.user_id', '=', 'users.id')
+            ->join('roles', 'roles.id', '=', 'ru.rol_id')
+            ->whereRaw('lower(roles.nombre) = ?', ['empleado'])
+            ->select('users.id', 'users.name', 'users.email')
+            ->orderBy('users.name')
             ->limit(200)
             ->get();
 
@@ -79,7 +83,7 @@ class ContratoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'empleado_id' => ['required', 'integer', 'exists:empleados,id'],
+            'empleado_id' => ['required', 'integer', 'exists:users,id'],
             'tipo_contrato' => ['nullable', 'string', 'max:64'],
             'frecuencia_pago' => ['nullable', 'string', 'max:64'],
             'puesto' => ['nullable', 'string', 'max:200'],
@@ -113,8 +117,8 @@ class ContratoController extends Controller
         ]));
 
         // Obtener nombre del empleado para notificación
-        $empleado = DB::table('empleados')->find($data['empleado_id']);
-        $empleadoNombre = $empleado ? "{$empleado->nombre} {$empleado->apellido}" : 'Empleado';
+        $empleado = DB::table('users')->find($data['empleado_id']);
+        $empleadoNombre = $empleado ? ($empleado->name ?? $empleado->email) : 'Empleado';
 
         // Notificar a otros administradores
         \App\Http\Controllers\NotificationHelper::notifyContratoCreado($contratoId, $empleadoNombre, auth()->id());
@@ -139,13 +143,13 @@ class ContratoController extends Controller
 
             // Obtener nombre del empleado
             $contrato = DB::table('contratos as c')
-                ->join('empleados as e', 'e.id', '=', 'c.empleado_id')
+                ->join('users as e', 'e.id', '=', 'c.empleado_id')
                 ->where('c.id', $id)
-                ->select('e.nombre', 'e.apellido')
+                ->select('e.name')
                 ->first();
 
             if ($contrato) {
-                $empleadoNombre = "{$contrato->nombre} {$contrato->apellido}";
+                $empleadoNombre = $contrato->name;
                 \App\Http\Controllers\NotificationHelper::notifyContratoEditado($id, $empleadoNombre, auth()->id());
             }
         }
@@ -157,9 +161,9 @@ class ContratoController extends Controller
     {
         // Obtener nombre antes de eliminar
         $contrato = DB::table('contratos as c')
-            ->join('empleados as e', 'e.id', '=', 'c.empleado_id')
+            ->join('users as e', 'e.id', '=', 'c.empleado_id')
             ->where('c.id', $id)
-            ->select('e.nombre', 'e.apellido')
+            ->select('e.name')
             ->first();
 
         DB::table('contratos')->where('id', $id)->delete();

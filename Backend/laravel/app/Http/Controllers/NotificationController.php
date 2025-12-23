@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Settings;
 
 class NotificationController extends Controller
 {
@@ -17,6 +18,25 @@ class NotificationController extends Controller
     {
         try {
             $userId = Auth::id();
+            // Comprobar preferencia global y por usuario (el usuario puede sobreescribir)
+            $global = Settings::where('key', 'show_notifications')->value('value');
+            $pref = Settings::where('key', 'user_' . $userId . '_show_notifications')->value('value');
+
+            // Lógica: if user explicit pref === '1' -> show; if pref === '0' -> hide; if pref is null -> follow global (show unless global === '0')
+            $show = true;
+            if (!is_null($pref)) {
+                $show = ((string)$pref === '1');
+            } else {
+                $show = !(!is_null($global) && (string)$global === '0');
+            }
+
+            if (!$show) {
+                return response()->json([
+                    'notifications' => [],
+                    'total' => 0,
+                    'unread' => 0,
+                ]);
+            }
             \Log::info('Cargando notificaciones para usuario: ' . $userId);
             
             $notifications = Notification::where('user_id', $userId)
@@ -42,6 +62,22 @@ class NotificationController extends Controller
 
     public function unread()
     {
+        $userId = Auth::id();
+        // Comprobar preferencia global y por usuario para listado de no leidas
+        $global = Settings::where('key', 'show_notifications')->value('value');
+        $pref = Settings::where('key', 'user_' . $userId . '_show_notifications')->value('value');
+        $show = true;
+        if (!is_null($pref)) {
+            $show = ((string)$pref === '1');
+        } else {
+            $show = !(!is_null($global) && (string)$global === '0');
+        }
+        if (!$show) {
+            return response()->json([
+                'notifications' => [],
+                'count' => 0,
+            ]);
+        }
         $notifications = Notification::where('user_id', Auth::id())
             ->where('read', false)
             ->orderBy('created_at', 'desc')

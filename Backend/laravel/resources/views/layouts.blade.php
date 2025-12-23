@@ -186,7 +186,24 @@
       <a class="navbar-brand" href="{{ route('home') }}">Gestión Nóminas</a>
       <ul class="navbar-nav ml-auto">
         @auth
-          @if(config('settings.show_notifications', '1') == '1')
+            @php
+            $showNotificationsForUser = true;
+            try {
+              if (auth()->check()) {
+                $global = \App\Models\Settings::where('key', 'show_notifications')->value('value');
+                $pref = \App\Models\Settings::where('key', 'user_'.auth()->id().'_show_notifications')->value('value');
+                if (!is_null($pref)) {
+                  $showNotificationsForUser = ((string)$pref === '1');
+                } else {
+                  $showNotificationsForUser = !(!is_null($global) && (string)$global === '0');
+                }
+              }
+            } catch (\Throwable $e) {
+              // if settings table not available, default to true
+              $showNotificationsForUser = true;
+            }
+            @endphp
+            @if($showNotificationsForUser)
           <li class="nav-item dropdown" id="notification-dropdown">
             <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-bell"></i>
@@ -336,7 +353,7 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <script>
   @auth
-  @if(config('settings.show_notifications', '1') == '1')
+  @if(isset($showNotificationsForUser) ? $showNotificationsForUser : true)
   $(document).ready(function() {
     // Función para cargar notificaciones
     function loadNotifications() {

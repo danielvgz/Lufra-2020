@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use App\Models\Settings as SettingModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\Paginator;
 use Laravel\Passport\Passport;
@@ -30,6 +31,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        try {
+            $activeTheme = SettingModel::where('key','web_template')->value('value');
+            if ($activeTheme) {
+                $themePath = public_path("themes/{$activeTheme}");
+                if (is_dir($themePath)) {
+                    View::addLocation($themePath);
+                    // Allow referencing theme views via namespace 'active_theme::view'
+                    View::addNamespace('active_theme', $themePath);
+                }
+            }
+        } catch (\Throwable $e) {
+            // don't break boot if settings table not available yet
+        }
         Schema::defaultStringLength(191);
         
         // Configurar paginación con Bootstrap 4

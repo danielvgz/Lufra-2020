@@ -28,7 +28,7 @@
                 <strong>Alertas:</strong> Contratos por vencer en 30 días:
                 <ul class="mb-0">
                   @foreach($alertas as $a)
-                    <li>#{{ $a->id }} - {{ $a->nombre }} {{ $a->apellido }} (vence {{ $a->fecha_fin }})</li>
+                    <li>#{{ $a->id }} - {{ $a->empleado_name ?? ($a->nombre ?? ($a->apellido ?? 'Empleado')) }} (vence {{ $a->fecha_fin }})</li>
                   @endforeach
                 </ul>
               </div>
@@ -44,7 +44,7 @@
                   <select name="empleado_id" class="form-control form-control-sm" required>
                     <option value="">Seleccione…</option>
                     @foreach($emps as $e)
-                      <option value="{{ $e->id }}">{{ $e->nombre }} {{ $e->apellido }} ({{ $e->id }})</option>
+                      <option value="{{ $e->id }}">{{ $e->name }} ({{ $e->email ?? $e->id }})</option>
                     @endforeach
                   </select>
                 </div>
@@ -102,7 +102,7 @@
                   @foreach($items as $c)
                     <tr>
                       <td>{{ $c->id }}</td>
-                      <td>{{ $c->nombre }} {{ $c->apellido }} ({{ $c->empleado_id }})</td>
+                      <td>{{ $c->empleado_name ?? ($c->empleado_email ?? $c->empleado_id) }} ({{ $c->empleado_id }})</td>
                       <td>{{ $c->tipo_contrato ?? '—' }}</td>
                       <td>{{ $c->frecuencia_pago ?? '—' }}</td>
                       <td>{{ $c->puesto }}</td>

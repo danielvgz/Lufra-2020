@@ -23,6 +23,9 @@
                         <li class="nav-item">
                             <a class="nav-link" id="options-tab" data-toggle="tab" href="#options" role="tab">Opciones</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="website-tab" data-toggle="tab" href="#website" role="tab">Sitio web</a>
+                        </li>
                     </ul>
 
                     <div class="tab-content mt-3" id="settingsTabContent">
@@ -184,23 +187,106 @@
                         <div class="tab-pane fade" id="options" role="tabpanel">
                             <h5><i class="fa fa-eye"></i> Configuraciones de Visualización</h5>
                             <hr>
-                            
-                            <div class="form-group">
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input" id="show_notifications" name="show_notifications" value="1" {{ config('settings.show_notifications', '1') == '1' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="show_notifications">
-                                        <i class="fa fa-bell"></i> Mostrar notificaciones en el navbar
-                                    </label>
+                            @php
+                                $isAdmin = false;
+                                try {
+                                    if (auth()->check()) {
+                                        $isAdmin = auth()->user()->tieneRol('Administrador') || auth()->user()->tieneRol('administrador');
+                                    }
+                                } catch (\Throwable $e) {
+                                    $isAdmin = false;
+                                }
+                            @endphp
+
+                            @if($isAdmin)
+                                <div class="form-group">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="show_notifications" name="show_notifications" value="1" {{ (isset($currentShowNotifications) && $currentShowNotifications == '1') ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="show_notifications">Mostrar notificaciones globalmente</label>
+                                    </div>
+                                    <small class="form-text text-muted">Control global: si está desactivado, las notificaciones no se mostrarán por defecto. Los usuarios aún pueden activar/desactivar sus notificaciones desde su perfil.</small>
                                 </div>
-                                <small class="form-text text-muted">Cuando está desactivado, el ícono de notificaciones no se mostrará en la barra superior</small>
-                            </div>
+                            @else
+                                <p class="text-muted">Las notificaciones se activan por usuario. Cada usuario (incluyendo administradores y empleados) gestiona su propia preferencia desde su perfil.</p>
+                            @endif
                         </div>
+
+                        <!-- Tab Sitio Web -->
+                            <div class="tab-pane fade" id="website" role="tabpanel">
+                                <h5>Plantillas del sitio</h5>
+                                <p class="text-muted">Seleccione la plantilla que se usará para el frontend público.</p>
+                                @if(!empty($templates))
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="use_home_view" name="use_home_view" value="1" {{ (isset($currentUseHome) && $currentUseHome == '1') ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="use_home_view">Usar vista predeterminada <code>home</code></label>
+                                        </div>
+                                        <small class="form-text text-muted">Si está marcado, la ruta <code>/inicio</code> mostrará la vista <code>home</code> y no la plantilla seleccionada.</small>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <table class="table table-sm">
+                                                <thead><tr><th>Plantilla</th><th>Acciones</th></tr></thead>
+                                                <tbody>
+                                                @foreach($templates as $t)
+                                                    <tr>
+                                                        <td>{{ $t }}</td>
+                                                        <td>
+                                                            <a class="btn btn-xs btn-outline-secondary" target="_blank" href="{{ route('templates.preview', ['name'=>$t]) }}">Preview</a>
+                                                            <button type="button" class="btn btn-xs btn-outline-primary ml-1 template-select-btn" onclick="selectTemplate('{{ $t }}')">Seleccionar</button>
+                                                            <button type="button" class="btn btn-xs btn-outline-danger ml-1 template-delete-btn" data-name="{{ $t }}">Eliminar</button>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6>Plantilla seleccionada</h6>
+                                                    <p><strong id="currentTemplate">{{ $current ?? '—' }}</strong></p>
+                                                    <input type="hidden" name="web_template" id="web_template_input" value="{{ old('web_template', $current) }}">
+                                                    <p class="text-muted">Después de seleccionar, guarda los cambios en la parte inferior para aplicar la plantilla.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <p>No se encontraron plantillas en <code>resources/views/templates</code>.</p>
+                                @endif
+                            </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary mt-3">
                         <i class="fas fa-save mr-1"></i> Guardar
                     </button>
                 </form>
+                
+                <!-- Modal de confirmación para eliminar plantilla -->
+                <div class="modal fade" id="deleteTemplateModal" tabindex="-1" role="dialog" aria-labelledby="deleteTemplateModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteTemplateModalLabel">Eliminar plantilla</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p id="deleteTemplateMessage">¿Deseas eliminar esta plantilla? Esta acción no se puede deshacer.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <form id="deleteTemplateForm" method="POST" action="">
+                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger">Eliminar plantilla</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -237,6 +323,50 @@ $(document).ready(function() {
             });
         }, 3000);
     });
+});
+</script>
+<script>
+$(function(){
+    function updateTemplateButtons() {
+        var useHome = $('#use_home_view').is(':checked');
+        $('.template-select-btn').prop('disabled', useHome);
+        if (useHome) {
+            if ($('#website .no-templates-msg').length === 0) {
+                var info = $('<div class="alert alert-info no-templates-msg">Usando vista <code>home</code>. Las plantillas están deshabilitadas hasta desactivar esta opción.</div>');
+                $('#website .card-body').first().append(info);
+            }
+        } else {
+            $('#website .no-templates-msg').remove();
+        }
+    }
+
+    // Initialize state
+    updateTemplateButtons();
+
+    // Toggle when checkbox changes
+    $('#use_home_view').change(function(){
+        updateTemplateButtons();
+    });
+
+    window.selectTemplate = function(name) {
+        $('#web_template_input').val(name);
+        $('#currentTemplate').text(name);
+        // Mark website tab to notify user to save
+        var msg = $('<div class="alert alert-info alert-dismissible fade show mt-2" role="alert">Plantilla "' + name + '" seleccionada. Guarda los cambios para aplicar.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        $('#website .card-body').first().append(msg);
+    }
+});
+</script>
+<script>
+// Modal delete handler
+$(document).on('click', '.template-delete-btn', function(){
+    var name = $(this).data('name');
+    var message = "¿Eliminar la plantilla '" + name + "'? Esta acción no se puede deshacer.";
+    $('#deleteTemplateMessage').text(message);
+    // build action URL - route: /templates/{name}/delete
+    var action = "{{ url('/templates') }}" + '/' + encodeURIComponent(name) + '/delete';
+    $('#deleteTemplateForm').attr('action', action);
+    $('#deleteTemplateModal').modal('show');
 });
 </script>
 @endsection
